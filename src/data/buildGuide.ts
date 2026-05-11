@@ -3600,4 +3600,436 @@ export const buildPhases: readonly BuildPhase[] = [
       },
     ],
   },
+  // ──────────────────────────────────────────────
+  // PHASE 7: Consuming the OpenAI Wrapper (For Other Teams)
+  // ──────────────────────────────────────────────
+  {
+    id: 7,
+    title: 'Consuming the OpenAI Wrapper',
+    description:
+      'A step-by-step guide for **any project team** on the same OutSystems environment to consume the **CareConnect_OpenAIWrapper** module. You do NOT need to build your own OpenAI integration — just add a dependency to the existing wrapper and call the **ChatCompletion** Server Action. This guide assumes you have never consumed an external module before.',
+    timeEstimate: '30-45 min',
+    sections: [
+      // ── 7.1: Prerequisites ──
+      {
+        id: '7.1',
+        title: 'Prerequisites — What You Need Before Starting',
+        summary:
+          'Verify that you are on the same OutSystems environment and that the **CareConnect_OpenAIWrapper** module has been published.',
+        steps: [
+          {
+            title: 'Confirm you are on the same environment',
+            instructions: [
+              'Open **Service Studio** on your computer',
+              'Look at the **Environment** field in the top-left corner of Service Studio — it shows the server URL you are connected to (e.g., **https://smumitb-dev.outsystemscloud.com**)',
+              'Ask the CareConnect team what environment they published **CareConnect_OpenAIWrapper** to',
+              'Both URLs must match exactly — if they do not match, you are on a different environment and cannot use **Ctrl+Q** (you would need to consume it as an external REST API instead)',
+            ],
+            important:
+              'If you are on a different environment, skip to Section 7.6 which covers the REST API consumption approach. The **Ctrl+Q** method described in Sections 7.2–7.5 only works when both teams share the same environment.',
+          },
+          {
+            title: 'Verify the wrapper module is published',
+            instructions: [
+              'In **Service Studio**, press **Ctrl+Q** to open the **Manage Dependencies** dialog',
+              'In the search box, type **CareConnect_OpenAIWrapper**',
+              'If the module appears in the search results, it is published and ready to consume — close the dialog for now (you will come back in the next section)',
+              'If the module does NOT appear, contact the CareConnect team and ask them to **1-Click Publish** the **CareConnect_OpenAIWrapper** module',
+            ],
+            tip: 'The module must be published at least once before it appears in the Manage Dependencies search. If the CareConnect team just created it but has not yet published, it will be invisible to your project.',
+          },
+          {
+            title: 'Understand what the wrapper provides',
+            instructions: [
+              'The **CareConnect_OpenAIWrapper** module exposes a single public Server Action called **ChatCompletion**',
+              'You send it a **UserMessage** (the text you want the AI to respond to)',
+              'You optionally send a **SystemPrompt** (instructions that tell the AI how to behave for your specific use case)',
+              'You optionally override the **Model**, **MaxTokens**, and **Temperature** settings',
+              'It returns **ResponseText** (the AI reply), **Success** (true/false), **ErrorMessage** (if something went wrong), and **TokensUsed** (how many OpenAI tokens were consumed)',
+              'You do NOT need to worry about API keys, HTTP headers, JSON serialization, or error handling — the wrapper handles all of that internally',
+            ],
+          },
+        ],
+      },
+
+      // ── 7.2: Add the Dependency ──
+      {
+        id: '7.2',
+        title: 'Add the Dependency to Your Module',
+        summary:
+          'Use **Ctrl+Q** (Manage Dependencies) to add a reference from your module to the **CareConnect_OpenAIWrapper** module.',
+        steps: [
+          {
+            title: 'Open your module in Service Studio',
+            instructions: [
+              'Open **Service Studio**',
+              'Open the **application** that contains your project (e.g., your team\'s app)',
+              'Open the specific **module** where you want to add AI features',
+              'This can be a **Reactive Web App** module (if you want to call the AI from the frontend) or a **Service** module (if you want to call the AI from backend logic)',
+            ],
+          },
+          {
+            title: 'Add the dependency via Manage Dependencies',
+            instructions: [
+              'Press **Ctrl+Q** on your keyboard — this opens the **Manage Dependencies** dialog',
+              'You will see a search box at the top and a list of available modules below',
+              'In the search box, type **CareConnect_OpenAIWrapper**',
+              'Click on **CareConnect_OpenAIWrapper** in the search results (left panel)',
+              'The right panel will show the public elements available from this module',
+              'Expand the **Server Actions** folder in the right panel',
+              'You should see **ChatCompletion** listed — check the **checkbox** next to it',
+              'Click **Apply** at the bottom-right of the dialog',
+              'Wait for Service Studio to refresh the references — you will see a progress bar',
+            ],
+            important:
+              'If **ChatCompletion** does not appear under Server Actions, the CareConnect team may not have set **Public = Yes** on the Server Action. Ask them to verify this setting and re-publish.',
+          },
+          {
+            title: 'Verify the dependency was added',
+            instructions: [
+              'After clicking Apply, look at the **Logic** tab on the left panel',
+              'Expand **Server Actions**',
+              'You should see a new folder called **CareConnect_OpenAIWrapper**',
+              'Inside that folder, you should see **ChatCompletion**',
+              'If you see it, the dependency is correctly added and you can proceed to the next section',
+            ],
+            tip: 'The **ChatCompletion** action will appear with a small arrow icon indicating it is a referenced (external) Server Action, not one you created locally.',
+          },
+        ],
+      },
+
+      // ── 7.3: Call ChatCompletion from a Server Action ──
+      {
+        id: '7.3',
+        title: 'Call ChatCompletion from a Server Action',
+        summary:
+          'Create a Server Action in your own module that calls the **ChatCompletion** wrapper. This is the recommended approach because it lets you add your own custom **SystemPrompt** and handle the response in your own business logic.',
+        steps: [
+          {
+            title: 'Create your own wrapper Server Action',
+            instructions: [
+              'Go to the **Logic** tab',
+              'Right-click **Server Actions** > select **Add Server Action**',
+              'Set **Name** to something meaningful for your use case — for example: **SA_AskAI**, **SA_GetAIRecommendation**, **SA_GenerateSummary**, etc.',
+              'Set **Public** to **Yes** if other modules in your app need to call it, or **No** if only this module will use it',
+            ],
+          },
+          {
+            title: 'Add Input Parameters to your Server Action',
+            instructions: [
+              'Right-click your new Server Action > select **Add Input Parameter**',
+              'Set **Name** to **UserMessage**',
+              'Set **Data Type** to **Text**',
+              'Set **Is Mandatory** to **Yes**',
+              'Add any other inputs your use case needs (e.g., a patient ID, a context string, etc.)',
+            ],
+          },
+          {
+            title: 'Add Output Parameters to your Server Action',
+            instructions: [
+              'Right-click your Server Action > select **Add Output Parameter**',
+              'Set **Name** to **AIResponse**',
+              'Set **Data Type** to **Text**',
+              'Right-click your Server Action > select **Add Output Parameter**',
+              'Set **Name** to **Success**',
+              'Set **Data Type** to **Boolean**',
+              'Right-click your Server Action > select **Add Output Parameter**',
+              'Set **Name** to **ErrorMessage**',
+              'Set **Data Type** to **Text**',
+            ],
+          },
+          {
+            title: 'Build the flow — call ChatCompletion',
+            instructions: [
+              'Double-click your Server Action to open the flow editor',
+              'From the **Logic** tab on the left, expand **Server Actions** > **CareConnect_OpenAIWrapper**',
+              'Drag **ChatCompletion** onto the flow canvas and drop it between the **Start** and **End** nodes',
+              'The action will appear as a node with input and output connectors',
+            ],
+          },
+          {
+            title: 'Map the input parameters',
+            instructions: [
+              'Click on the **ChatCompletion** node you just dragged onto the canvas',
+              'In the **Properties** panel on the right, you will see the input parameters:',
+              'Set **UserMessage** to your input parameter — for example: **UserMessage**',
+              'Set **SystemPrompt** to a text string that tells the AI how to behave for YOUR project — for example: **"You are a helpful assistant for [YourProjectName]. Answer questions about [your domain]."**',
+              'Leave **Model** empty (it will use the default **gpt-4o-mini**) or set it to a specific model like **"gpt-4o"** if you need higher quality responses',
+              'Leave **MaxTokens** as **0** (it will use the default **1024**) or set a custom value',
+              'Leave **Temperature** as **0.7** (balanced creativity) or set **0.2** for more factual responses, or **1.0** for more creative responses',
+            ],
+            tip: 'The **SystemPrompt** is the most important parameter for your team to customize. It controls the AI personality and behavior. For example: "You are a medical triage assistant. Only answer health-related questions. If unsure, recommend the user consult a doctor." — make it specific to YOUR project, not CareConnect.',
+          },
+          {
+            title: 'Handle the response',
+            instructions: [
+              'Drag an **If** node after the **ChatCompletion** node',
+              'Set the **Condition** to **ChatCompletion.Success**',
+              'On the **True** branch (left): drag an **Assign** node',
+              'Set **AIResponse** = **ChatCompletion.ResponseText**',
+              'Set **Success** = **True**',
+              'Set **ErrorMessage** = **""**',
+              'Connect the Assign to the **End** node',
+              'On the **False** branch (right): drag an **Assign** node',
+              'Set **AIResponse** = **""**',
+              'Set **Success** = **False**',
+              'Set **ErrorMessage** = **ChatCompletion.ErrorMessage**',
+              'Connect the Assign to the **End** node',
+            ],
+            important:
+              'Always check **ChatCompletion.Success** before using **ChatCompletion.ResponseText**. If the API call failed (network error, invalid key, rate limit), **ResponseText** will be empty and **ErrorMessage** will contain the reason.',
+          },
+        ],
+      },
+
+      // ── 7.4: Call from the UI (Screen + Button) ──
+      {
+        id: '7.4',
+        title: 'Call from the UI — Screen with Input and Button',
+        summary:
+          'Create a simple screen with a text input and a button that sends the user\'s message to the AI and displays the response. This is the quickest way to test the integration end-to-end.',
+        steps: [
+          {
+            title: 'Create the screen (if you don\'t already have one)',
+            instructions: [
+              'Go to the **Interface** tab',
+              'Right-click **MainFlow** > select **Add Screen**',
+              'Choose **Empty** screen template',
+              'Set **Name** to something like **AIChat** or **AskAI**',
+              'Click **Create Screen**',
+            ],
+          },
+          {
+            title: 'Add Local Variables for state management',
+            instructions: [
+              'Right-click the screen name in the widget tree > select **Add Local Variable**',
+              'Set **Name** to **UserInput**',
+              'Set **Data Type** to **Text**',
+              'Right-click the screen name > select **Add Local Variable**',
+              'Set **Name** to **AIResponseText**',
+              'Set **Data Type** to **Text**',
+              'Right-click the screen name > select **Add Local Variable**',
+              'Set **Name** to **IsLoading**',
+              'Set **Data Type** to **Boolean**',
+              'Set **Default Value** to **False**',
+              'Right-click the screen name > select **Add Local Variable**',
+              'Set **Name** to **ErrorText**',
+              'Set **Data Type** to **Text**',
+            ],
+          },
+          {
+            title: 'Add an Input widget for the user\'s message',
+            instructions: [
+              'Drag an **Input** widget from the toolbox onto the screen',
+              'In the **Properties** panel, set **Variable** to **UserInput**',
+              'Optionally set **Prompt** (placeholder text) to **"Type your message here..."**',
+            ],
+          },
+          {
+            title: 'Add a Button to send the message',
+            instructions: [
+              'Drag a **Button** widget below the Input widget',
+              'Set the **Text** property to **"Ask AI"** (or whatever label fits your project)',
+              'In the **Events** section of the Button properties, find **On Click**',
+              'Click the **On Click** dropdown > select **New Client Action**',
+              'This creates a new Client Action and opens the flow editor',
+            ],
+          },
+          {
+            title: 'Build the Client Action flow',
+            instructions: [
+              'Inside the Client Action flow, drag an **Assign** node after **Start**',
+              'Set **IsLoading** = **True** (this lets you show a loading spinner on the screen)',
+              'Set **ErrorText** = **""** (clear any previous errors)',
+              'Drag **Run Server Action** from the toolbox after the Assign',
+              'If you created a wrapper in Section 7.3, select your **SA_AskAI** (or equivalent) Server Action',
+              'If you did NOT create a wrapper, select **CareConnect_OpenAIWrapper > ChatCompletion** directly',
+              'Map **UserMessage** to **UserInput**',
+              'If calling ChatCompletion directly, set **SystemPrompt** to a string for your project\'s context',
+              'Drag an **If** node after the Server Action',
+              'Set the **Condition** to **SA_AskAI.Success** (or **ChatCompletion.Success** if calling directly)',
+              'On the **True** branch: drag an **Assign** — set **AIResponseText** = **SA_AskAI.AIResponse** (or **ChatCompletion.ResponseText**)',
+              'On the **False** branch: drag an **Assign** — set **ErrorText** = **SA_AskAI.ErrorMessage** (or **ChatCompletion.ErrorMessage**)',
+              'After both branches merge, drag another **Assign** node',
+              'Set **IsLoading** = **False**',
+              'Connect to **End**',
+            ],
+            tip: 'Setting **IsLoading** to **True** at the start and **False** at the end lets you bind a loading indicator on the screen using an **If** widget with **Condition = IsLoading**.',
+          },
+          {
+            title: 'Display the AI response on the screen',
+            instructions: [
+              'Go back to the screen editor (click the screen name in the Interface tab)',
+              'Below the Button, drag an **Expression** widget',
+              'Set its **Value** to **AIResponseText**',
+              'This will display the AI\'s response after the button is clicked',
+              'Optionally, add another **Expression** or **If** widget to show **ErrorText** when it is not empty — wrap it in an **If** widget with **Condition** = **ErrorText <> ""** to hide it when there is no error',
+            ],
+          },
+          {
+            title: 'Test it',
+            instructions: [
+              'Click the green **1-Click Publish** button in the top-right of Service Studio',
+              'Wait for the publish to complete',
+              'Click **Open in browser** to launch your app',
+              'Navigate to the AI screen',
+              'Type a test message like **"Hello, what can you do?"**',
+              'Click the **Ask AI** button',
+              'You should see the AI response appear below the button within a few seconds',
+            ],
+            important:
+              'If you get an error, check these common causes: (1) the CareConnect team has not set the API key in Service Center, (2) you are on a different environment, (3) you did not check the ChatCompletion checkbox in Ctrl+Q. See Section 7.7 for a full troubleshooting guide.',
+          },
+        ],
+      },
+
+      // ── 7.5: Customizing the SystemPrompt for Your Project ──
+      {
+        id: '7.5',
+        title: 'Customizing the SystemPrompt for Your Project',
+        summary:
+          'The **SystemPrompt** parameter is how you tailor the AI behavior to your specific project. This section explains what it does and gives examples for different use cases.',
+        steps: [
+          {
+            title: 'What is the SystemPrompt?',
+            instructions: [
+              'The **SystemPrompt** is a hidden instruction sent to the AI before the user\'s message',
+              'It tells the AI WHO it is, WHAT it should do, and HOW it should respond',
+              'The user never sees the SystemPrompt — only the AI sees it',
+              'If you do not provide one, the default is: **"You are a helpful assistant for CareConnect, a caregiving platform."**',
+              'You almost certainly want to override this default with something specific to YOUR project',
+            ],
+          },
+          {
+            title: 'Example SystemPrompts for different use cases',
+            instructions: [
+              'For a **healthcare Q&A bot**: **"You are a medical information assistant. Provide accurate health information based on established medical knowledge. Always include a disclaimer to consult a healthcare professional. Never diagnose conditions."**',
+              'For a **customer service bot**: **"You are a customer support agent for [Your Company]. Be polite, concise, and helpful. If you cannot resolve the issue, tell the user to contact support@example.com."**',
+              'For a **study assistant**: **"You are a study tutor for [Course Name]. Explain concepts clearly using simple language. Give examples. If the student is confused, try a different explanation approach."**',
+              'For a **data summarizer**: **"You are a data analyst assistant. When given data or text, summarize the key insights in 3-5 bullet points. Be factual and avoid speculation."**',
+              'For a **code helper**: **"You are a programming assistant specializing in [Language]. Provide code examples with comments. Explain your reasoning step by step."**',
+            ],
+            tip: 'A good SystemPrompt is specific and includes constraints. "You are a helpful assistant" is too vague. "You are a nutrition advisor for elderly patients. Only discuss food and nutrition. Limit responses to 200 words. Cite sources when possible." is much better.',
+          },
+          {
+            title: 'How to pass the SystemPrompt in your code',
+            instructions: [
+              'When you call **ChatCompletion** (either directly or through your wrapper Server Action), set the **SystemPrompt** input parameter',
+              'You can hardcode it as a string literal: **"You are a helpful assistant for [YourProject]..."**',
+              'You can store it in a **Site Property** in your own module so you can change it at runtime without re-publishing',
+              'You can even make it dynamic — build the string based on context, e.g.: **"You are assisting a patient named " + PatientName + ". Their care plan includes: " + CarePlanSummary**',
+            ],
+            important:
+              'Do NOT put sensitive information in the SystemPrompt that you would not want the AI to potentially repeat. The AI may quote parts of the SystemPrompt in its response if the user asks cleverly.',
+          },
+        ],
+      },
+
+      // ── 7.6: Alternative — Consume via REST API (Different Environment) ──
+      {
+        id: '7.6',
+        title: 'Alternative — Consume via REST API',
+        summary:
+          'If you are on a **different OutSystems environment** or prefer HTTP-based integration, you can consume the OpenAI wrapper through its exposed REST endpoint instead of **Ctrl+Q**.',
+        steps: [
+          {
+            title: 'Get the REST API URL from the CareConnect team',
+            instructions: [
+              'Ask the CareConnect team for the **Swagger URL** of their **OpenAIService** exposed REST API',
+              'The URL will look something like: **https://[environment-url]/CareConnect_OpenAIWrapper/rest/OpenAIService**',
+              'You can also ask for the full Swagger/OpenAPI JSON URL, which is usually at: **https://[environment-url]/CareConnect_OpenAIWrapper/rest/OpenAIService/$swagger**',
+            ],
+            important:
+              'The CareConnect team must have completed Section 6.7 (Expose as REST API) in their build guide for this to work. If they only built the Server Action without the exposed REST endpoint, this approach is not available — you must use Ctrl+Q on the same environment.',
+          },
+          {
+            title: 'Consume the REST API in your module',
+            instructions: [
+              'Open your module in **Service Studio**',
+              'Go to the **Logic** tab',
+              'Expand **Integrations**',
+              'Right-click **REST** > select **Consume REST API**',
+              'Select **Add Single Method**',
+              'Set **Name** to **OpenAIChatCompletion**',
+              'Set **Method** to **POST**',
+              'Set **URL** to the endpoint URL provided by the CareConnect team (e.g., **https://[environment-url]/CareConnect_OpenAIWrapper/rest/OpenAIService/chatcompletion**)',
+            ],
+          },
+          {
+            title: 'Configure the Request body',
+            instructions: [
+              'In the **Request** tab of the consumed method, paste this sample JSON:',
+              '**{"UserMessage": "Hello", "SystemPrompt": "You are a helpful assistant.", "Model": "", "MaxTokens": 0, "Temperature": 0.7}**',
+              'Click **OK** to let OutSystems generate the request Structure',
+            ],
+          },
+          {
+            title: 'Configure the Response body',
+            instructions: [
+              'In the **Response** tab, paste this sample JSON:',
+              '**{"Success": true, "ResponseText": "Hello! How can I help?", "ErrorMessage": "", "TokensUsed": 25}**',
+              'Click **OK** to let OutSystems generate the response Structure',
+            ],
+          },
+          {
+            title: 'Call the consumed REST API from your code',
+            instructions: [
+              'The consumed REST method now appears under **Logic** > **Integrations** > **REST**',
+              'Drag it onto any Server Action flow, just like you would call a local Server Action',
+              'Map the inputs: **UserMessage** (required), **SystemPrompt** (optional), **Model** (optional), **MaxTokens** (optional), **Temperature** (optional)',
+              'The outputs will be: **Success**, **ResponseText**, **ErrorMessage**, **TokensUsed**',
+            ],
+            tip: 'The REST approach adds network latency since you are making an HTTP call between environments. The Ctrl+Q approach (same environment) is faster because it is a direct in-process call.',
+          },
+        ],
+      },
+
+      // ── 7.7: Troubleshooting ──
+      {
+        id: '7.7',
+        title: 'Troubleshooting Common Issues',
+        summary:
+          'Solutions for the most common problems you may encounter when consuming the **CareConnect_OpenAIWrapper** module.',
+        steps: [
+          {
+            title: 'Problem: ChatCompletion does not appear in Ctrl+Q',
+            instructions: [
+              '**Cause 1**: The wrapper module has not been published yet — ask the CareConnect team to **1-Click Publish** the module',
+              '**Cause 2**: The **ChatCompletion** Server Action does not have **Public = Yes** — ask the CareConnect team to check this setting',
+              '**Cause 3**: You are on a different environment — check the environment URL in the top-left corner of Service Studio',
+              '**Fix**: After the CareConnect team fixes and re-publishes, close and re-open the **Ctrl+Q** dialog to refresh the module list',
+            ],
+          },
+          {
+            title: 'Problem: API call returns Success = False with an error message',
+            instructions: [
+              '**"OpenAI API call failed: 401 Unauthorized"** — the API key is not configured in Service Center. Ask the CareConnect team to set the **OpenAI_APIKey** Site Property',
+              '**"OpenAI API call failed: 429 Too Many Requests"** — the API is being rate-limited. Wait a few seconds and try again, or ask the CareConnect team if other consumers are also hitting the API',
+              '**"OpenAI API call failed: 400 Bad Request"** — this usually means a Structure mismatch in the wrapper. Report the exact error message to the CareConnect team',
+              '**"OpenAI API call failed: [network error]"** — the OutSystems server cannot reach **api.openai.com**. This may be a firewall or proxy issue on the environment',
+            ],
+          },
+          {
+            title: 'Problem: Response is empty or gibberish',
+            instructions: [
+              'Check that your **SystemPrompt** is clear and specific — a vague prompt produces vague responses',
+              'Check that **UserMessage** is not empty — sending an empty string will produce an unpredictable response',
+              'Try increasing **MaxTokens** if the response seems cut off — the default is **1024** tokens which is about 750 words',
+              'Try lowering **Temperature** to **0.2** if the response seems random or incoherent — lower temperature produces more focused responses',
+            ],
+          },
+          {
+            title: 'Problem: Response is slow (takes many seconds)',
+            instructions: [
+              'OpenAI API calls typically take **2-10 seconds** depending on the model and response length — this is normal',
+              'Use **gpt-4o-mini** (the default) for faster responses — **gpt-4o** is slower but more capable',
+              'Reduce **MaxTokens** to limit the response length — shorter responses are faster',
+              'Add a loading indicator on your screen so the user knows the app is working (see the **IsLoading** pattern in Section 7.4)',
+            ],
+            tip: 'If you are calling the AI from a Client Action, the UI thread is not blocked — the user can still interact with the screen while waiting. But adding a visual loading indicator (spinner, "Thinking..." text) is strongly recommended for good UX.',
+          },
+        ],
+      },
+    ],
+  },
 ]
