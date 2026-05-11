@@ -4186,13 +4186,12 @@ export const buildPhases: readonly BuildPhase[] = [
             important: 'You MUST check the checkbox — just expanding the tree is not enough. The checkbox appears to the LEFT of each action name. A checked item shows a filled checkbox.',
           },
           {
-            title: 'Add Party Server Actions',
+            title: 'Add Party Server Actions (optional — skip if not built yet)',
             instructions: [
-              'Still inside **Manage Dependencies** with **CC_Orchestration** expanded:',
-              'Under **Server Actions**, also check:',
-              '**SA_DoRegisterUser** — registers a new user via the Party API (you may already have this from Phase 5)',
-              '**SA_DoLoginUser** — logs in a user and returns their PartyId, role, and name',
-              'If you need raw Party lookups, also check any **GetPerson**-related actions that CC_Orchestration exposes',
+              '**SA_DoRegisterUser** and **SA_DoLoginUser** are complex composite actions built in **Phase 4**. They depend on the atomic services from Phase 3 (SA_CreateFamily, SA_CreateCaregiver, etc.)',
+              'If you have NOT completed Phase 3 and Phase 4, **skip this step** — you do not need these actions for the Product Catalog or Party Lookup screens',
+              'The only Party action you need for Phase 8 is **SA_GetPerson**, which you will create in Section 8.6 — it calls the consumed **GetPerson** REST method directly and does NOT depend on Phase 3 or 4',
+              'If you HAVE completed Phase 4 and want to add them: still inside **Manage Dependencies** with **CC_Orchestration** expanded, check **SA_DoRegisterUser** and **SA_DoLoginUser** under Server Actions',
             ],
             tip: 'If you do not see a Server Action listed, it means CC_Orchestration has not been published with that action set to **Public = Yes**. Go back to CC_Orchestration, set the action\'s **Public** property to **Yes**, re-publish (**Ctrl+Shift+P**), then come back here and click **Refresh** in Manage Dependencies.',
           },
