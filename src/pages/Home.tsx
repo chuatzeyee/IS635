@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
-import { BookOpen, List, FileCode2, FlaskConical, ArrowRight } from 'lucide-react'
+import { BookOpen, List, FileCode2, FlaskConical, Hammer, ArrowRight } from 'lucide-react'
 import { sessions } from '../data/topics'
 import { definitions } from '../data/definitions'
 import { guides } from '../data/guides'
 import { questions } from '../data/questions'
+import { buildPhases } from '../data/buildGuide'
 
 const cards = [
   {
@@ -37,6 +38,14 @@ const cards = [
     description: 'Interactive quiz with score tracking and session filters',
     count: questions.length,
     unit: 'questions',
+  },
+  {
+    to: '/build',
+    icon: Hammer,
+    title: 'Build Guide',
+    description: 'Step-by-step backend build reference for CareConnect',
+    count: buildPhases.reduce((sum, p) => sum + p.sections.length, 0),
+    unit: 'sections',
   },
 ] as const
 

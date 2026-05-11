@@ -6,6 +6,7 @@ import Topics from './pages/Topics'
 import Definitions from './pages/Definitions'
 import Guides from './pages/Guides'
 import Practice from './pages/Practice'
+import Build from './pages/Build'
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/definitions" element={<Definitions />} />
           <Route path="/guides" element={<Guides />} />
           <Route path="/practice" element={<Practice />} />
+          <Route path="/build" element={<Build />} />
         </Routes>
       </main>
       <NavPill />

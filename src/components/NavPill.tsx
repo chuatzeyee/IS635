@@ -5,6 +5,7 @@ import {
   List,
   FileCode2,
   FlaskConical,
+  Hammer,
 } from 'lucide-react'
 
 const navItems = [
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/definitions', label: 'Defs', icon: List },
   { to: '/guides', label: 'Guides', icon: FileCode2 },
   { to: '/practice', label: 'Practice', icon: FlaskConical },
+  { to: '/build', label: 'Build', icon: Hammer },
 ] as const
 
 export default function NavPill() {
