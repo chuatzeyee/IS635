@@ -1,32 +1,26 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { ArrowUp } from 'lucide-react'
 
 export default function ScrollToTop() {
   const [visible, setVisible] = useState(false)
-  const scrollRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    const el = document.getElementById('main-content')
-    scrollRef.current = el
-
-    if (!el) return
-
     const handleScroll = () => {
-      setVisible(el.scrollTop > 300)
+      setVisible(window.scrollY > 300)
     }
 
-    el.addEventListener('scroll', handleScroll, { passive: true })
-    return () => el.removeEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const scrollToTop = () => {
-    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
     <button
       onClick={scrollToTop}
-      className={`fixed bottom-6 right-6 p-3 bg-glow-dim hover:bg-glow/20 text-glow rounded-full border border-glow/30 z-50 cursor-pointer transition-all duration-300 ${
+      className={`fixed bottom-20 right-6 p-3 bg-glow-dim hover:bg-glow/20 text-glow rounded-full border border-glow/30 z-50 cursor-pointer transition-all duration-300 ${
         visible
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-4 pointer-events-none'

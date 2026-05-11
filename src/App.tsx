@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
-import Sidebar from './components/Sidebar'
+import NavPill from './components/NavPill'
 import ScrollToTop from './components/ScrollToTop'
 import Home from './pages/Home'
 import Topics from './pages/Topics'
@@ -9,11 +9,10 @@ import Practice from './pages/Practice'
 
 export default function App() {
   return (
-    <div className="flex h-screen bg-void">
-      <Sidebar />
+    <div className="min-h-screen bg-void">
       <main
         id="main-content"
-        className="flex-1 overflow-y-auto scroll-smooth"
+        className="pb-24 scroll-smooth"
       >
         <Routes>
           <Route path="/" element={<Home />} />
@@ -23,6 +22,7 @@ export default function App() {
           <Route path="/practice" element={<Practice />} />
         </Routes>
       </main>
+      <NavPill />
       <ScrollToTop />
     </div>
   )
