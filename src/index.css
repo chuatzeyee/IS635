@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Surface Elevation ── */
+  --color-void: #0a0e17;
+  --color-base: #0f1520;
+  --color-surface: #151d2c;
+  --color-raised: #1a2435;
+  --color-overlay: #1f2b3e;
+
+  /* ── Borders ── */
+  --color-edge: #1e2a3d;
+  --color-edge-bright: #2a3a52;
+
+  /* ── Text ── */
+  --color-ink: #e2e8f0;
+  --color-ink-secondary: #94a3b8;
+  --color-ink-muted: #64748b;
+  --color-ink-faint: #475569;
+
+  /* ── Accent ── */
+  --color-glow: #38bdf8;
+  --color-glow-dim: #0c4a6e;
+  --color-glow-hover: #7dd3fc;
+
+  /* ── Semantic ── */
+  --color-correct: #34d399;
+  --color-correct-dim: #064e3b;
+  --color-wrong: #fb7185;
+  --color-wrong-dim: #4c0519;
+
+  /* ── Session Tab Colors ── */
+  --color-s1: #38bdf8;
+  --color-s2: #a78bfa;
+  --color-s3: #34d399;
+  --color-s4: #fbbf24;
+  --color-s5: #fb923c;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-void);
+  color: var(--color-ink);
+}
+
+::selection {
+  background-color: var(--color-glow-dim);
+  color: var(--color-glow);
+}
+
+input::placeholder {
+  color: var(--color-ink-muted);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-edge-bright);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-muted);
+}

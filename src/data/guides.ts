@@ -1,0 +1,215 @@
+export interface Guide {
+  readonly id: string
+  readonly title: string
+  readonly steps: readonly string[]
+}
+
+export const guides: readonly Guide[] = [
+  {
+    id: "create-entity",
+    title: "Create an Entity",
+    steps: [
+      "Data tab > right-click Entities > Add Entity",
+      "Rename Id, set Is AutoNumber = Yes",
+      "Add attributes (right-click entity > Add Entity Attribute)",
+      "Set each attribute's Data Type, Length, Mandatory, Default Value",
+      "ER Diagrams, CRUD methods, and data model are auto-created",
+      "Primary Key shown with an Identifier symbol",
+    ],
+  },
+  {
+    id: "bootstrap-entity",
+    title: "Bootstrap Entity from Excel",
+    steps: [
+      "Prepare an Excel file with column headers matching entity attributes",
+      "Right-click the Entity > Import Data from Excel",
+      "Select the Excel file to import",
+      "Map columns to entity attributes if needed",
+      "Data is imported and entity is populated with records",
+      "Excel file is deposited in the Resources folder (can be removed after)",
+    ],
+  },
+  {
+    id: "create-static-entity",
+    title: "Create a Static Entity",
+    steps: [
+      "Data tab > right-click Entities > Add Static Entity",
+      "Add Records (right-click > Add Record)",
+      "Enter the Label for each record (e.g., 'Company', 'Customer', 'Employee')",
+      "Only Get method is available (read-only)",
+      "Use for enumerations and fixed reference values",
+    ],
+  },
+  {
+    id: "create-structure",
+    title: "Create a Structure",
+    steps: [
+      "Data tab > right-click Structures > Add Structure",
+      "Name the Structure (e.g., 'CreateSlotRequest')",
+      "Add Attributes (right-click Structure > Add Structure Attribute)",
+      "Set Data Type for each attribute",
+      "Set 'Name in JSON' if different from attribute name (case-sensitive)",
+      "Structure = JSON Object in REST APIs; List of Structures = JSON Array",
+    ],
+  },
+  {
+    id: "create-server-action",
+    title: "Create a Server Action",
+    steps: [
+      "Logic tab > right-click Server Actions > Add Server Action",
+      "Add Input Parameters (right-click SA > Add Input Parameter)",
+      "Add Output Parameters for return values",
+      "Build flow: drag Aggregate, If, Switch, Assign, CRUD actions onto canvas",
+      "For Aggregate: double-click > Add Source > select Entity > set Filters",
+      "For primary key filters: use LongIntegerToIdentifier(InputParam)",
+      "Server Actions emit C# .NET code",
+    ],
+  },
+  {
+    id: "create-client-action",
+    title: "Create a Client Action",
+    steps: [
+      "Logic tab > right-click Client Actions > Add Client Action",
+      "Add Input/Output Parameters as needed",
+      "Build flow using client-side elements: Message, If, Switch, For Each, Assign",
+      "Can call Server Actions via 'Run Server Action' element",
+      "Can use JSON Serialize/Deserialize for Structure-to-Text conversion",
+      "To make it a User Function: set Function property to 'Yes'",
+      "Client Actions emit React.JS code",
+    ],
+  },
+  {
+    id: "expose-rest-api",
+    title: "Expose a REST API",
+    steps: [
+      "Logic > Integrations > right-click REST > Expose REST API",
+      "Right-click API > Add REST API Method",
+      "Set HTTP Method (GET, POST, PUT, DELETE) and URL in Properties",
+      "Add Input Parameters (set Receive In: Body or URL path)",
+      "Only ONE Body parameter allowed per method -- use a Structure for multiple fields",
+      "For GET methods: leave Receive In at default (NOT 'Query')",
+      "Add Output Parameters for the response",
+      "Build flow: drag Server Action, map inputs, Assign output",
+      "Swagger documentation is auto-created",
+    ],
+  },
+  {
+    id: "consume-rest-api",
+    title: "Consume a REST API",
+    steps: [
+      "Logic > Integrations > right-click REST > Consume REST API",
+      "Choose: Add Single Method or paste Swagger URL",
+      "OutSystems auto-generates Structures from the response",
+      "Use the consumed methods in Server Actions",
+      "Consumed API methods appear under Logic > Integrations",
+    ],
+  },
+  {
+    id: "add-dependency",
+    title: "Add a Dependency (Ctrl+Q)",
+    steps: [
+      "Press Ctrl+Q (or Module menu > Manage Dependencies)",
+      "Search for the module name",
+      "Expand and check the elements you need (Entities, Actions, etc.)",
+      "Click Apply to add the dependency",
+      "Static Entities appear under Data > (ModuleName)",
+      "Server Actions appear under Logic > (ModuleName)",
+    ],
+  },
+  {
+    id: "create-entity-index",
+    title: "Create an Entity Index",
+    steps: [
+      "Click on the Entity in Data tab",
+      "In Properties panel, find 'Indexes and more'",
+      "Click + to create new index",
+      "Select the attribute(s) to index",
+      "Do NOT create indexes on Identifier-type fields (auto-indexed by OutSystems)",
+      "Duplicate indexes will cause build errors",
+    ],
+  },
+  {
+    id: "use-longintegertoid",
+    title: "Use LongIntegerToIdentifier()",
+    steps: [
+      "Primary key filters in Aggregates need: Entity.Id = LongIntegerToIdentifier(InputParam)",
+      "Foreign key Long Integer filters do NOT need conversion",
+      "Example: CareRequest.CareRequestId = LongIntegerToIdentifier(CareRequestId)",
+      "Type the input parameter name manually -- autocomplete only shows entity attributes",
+    ],
+  },
+  {
+    id: "create-client-variable",
+    title: "Create a Client Variable",
+    steps: [
+      "Data tab > right-click Client Variables > Add Client Variable",
+      "Set the Data Type (must be primitive: Integer, Boolean, or Text)",
+      "To store a Structure: serialize it to Text using JSON Serialize first",
+      "Client Variables are stored in browser memory only",
+      "NOT visible to Server Actions -- only Client Actions can access them",
+      "Data does NOT follow user across different machines",
+    ],
+  },
+  {
+    id: "create-site-property",
+    title: "Create a Site Property",
+    steps: [
+      "Data tab > right-click Site Properties > Add Site Property",
+      "Set the Data Type and Default Value",
+      "Site Properties have Application scope (global parameters)",
+      "NOT visible to Client Actions",
+      "Can change at runtime via Service Center (no re-publish needed)",
+      "Open Service Center via the icon in the studio toolbar",
+    ],
+  },
+  {
+    id: "for-each-loop",
+    title: "Build a For Each Loop",
+    steps: [
+      "Drag a For Each element onto the flow canvas",
+      "Set the Record List property to the List you want to iterate",
+      "Connect the Cycle path to the logic you want to repeat",
+      "Access current element via: List.Current.[AttributeName]",
+      "Check List.Empty before iterating to handle empty lists",
+      "Other attributes: EOF, BOF, CurrentRowNumber, Length",
+      "Use Debugger View to inspect values during iteration",
+    ],
+  },
+  {
+    id: "setup-reactive-web",
+    title: "Set Up a Reactive Web App",
+    steps: [
+      "Create a new application and select 'Reactive Web App' template",
+      "SPA architecture: all HTML/JS/CSS loaded once, pages never reload",
+      "Set Default Screen to your 'Home' screen",
+      "Configure Default Theme (edit fonts, colors, spacing via Theme Editor)",
+      "Use built-in layouts: LayoutTopMenu or LayoutSideMenu",
+      "Auto-created elements: OnException, InvalidPermissions, Login, RedirectToURL, Web Blocks",
+      "Drag Screen Widgets into placeholders; use Form Accelerator for auto-generated forms",
+    ],
+  },
+  {
+    id: "customize-theme",
+    title: "Customize the UI Theme",
+    steps: [
+      "Open the Theme Editor from the Interface tab",
+      "Edit fonts, colors, and spacing as needed",
+      "Save the Theme under a new name",
+      "Optionally make the new Theme public for other applications to use",
+      "Use Widget Styles Editor for individual widget customization",
+      "Add Style Classes from the CSS library for specific widgets",
+    ],
+  },
+  {
+    id: "load-browser-memory",
+    title: "Load Server Data into Browser Memory",
+    steps: [
+      "Create a Client Action called 'LoadData' (or similar)",
+      "In LoadData, call Server Actions to fetch reference data and user-specific data",
+      "Store the results in Client Variables (serialize Structures to Text if needed)",
+      "Call LoadData from the Login Client Action (after successful authentication)",
+      "Read data from Client Variables throughout the app (instantaneous, no network calls)",
+      "Only update server-side when data is created or updated",
+    ],
+  },
+]
