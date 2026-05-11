@@ -23,12 +23,14 @@ export default function ScrollToTop() {
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  if (!visible) return null
-
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-6 right-6 p-3 bg-glow-dim hover:bg-glow/20 text-glow rounded-full border border-glow/30 transition-colors z-50 cursor-pointer"
+      className={`fixed bottom-6 right-6 p-3 bg-glow-dim hover:bg-glow/20 text-glow rounded-full border border-glow/30 z-50 cursor-pointer transition-all duration-300 ${
+        visible
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-4 pointer-events-none'
+      }`}
       aria-label="Scroll to top"
     >
       <ArrowUp size={20} />

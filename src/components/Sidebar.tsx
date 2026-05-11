@@ -38,13 +38,13 @@ export default function Sidebar() {
     >
       <div className="flex items-center gap-2 px-3 h-14 border-b border-edge">
         {expanded && (
-          <span className="text-sm font-semibold text-glow truncate tracking-wide">
+          <span className="text-sm font-semibold text-glow truncate tracking-wide font-mono">
             IS635
           </span>
         )}
         <button
           onClick={() => setExpanded((prev) => !prev)}
-          className="ml-auto p-1 rounded hover:bg-raised text-ink-muted hover:text-ink transition-colors cursor-pointer"
+          className="ml-auto p-1 rounded hover:bg-raised text-ink-muted hover:text-ink transition-colors duration-150 cursor-pointer"
           aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           {expanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
@@ -58,9 +58,9 @@ export default function Sidebar() {
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 mx-1 rounded-md text-sm transition-colors ${
+              `flex items-center gap-3 px-3 py-2.5 mx-1 rounded-md text-sm transition-all duration-150 ${
                 isActive
-                  ? 'bg-glow-dim text-glow border border-glow/20'
+                  ? 'bg-glow-dim text-glow border border-glow/20 shadow-[0_0_12px_rgba(74,222,128,0.06)]'
                   : 'text-ink-secondary hover:bg-raised hover:text-ink'
               }`
             }
