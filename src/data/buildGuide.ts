@@ -322,6 +322,20 @@ export const buildPhases: readonly BuildPhase[] = [
             ],
           },
           {
+            title: 'Set Product Server Actions and Structures to Public',
+            instructions: [
+              'For each of the 4 Product Server Actions (**SA_GetProductFamilies**, **SA_GetProductClasses**, **SA_GetProductTypes**, **SA_GetProductHierarchy**):',
+              'Click the action name > in the **Properties** panel, set **Public** = **Yes**',
+              'Next, set the Structures used by these actions to Public as well:',
+              'Go to the **Data** tab > **Structures**',
+              'Click **ProductFamily** > in **Properties**, set **Public** = **Yes**',
+              'Click **ProductClass** > set **Public** = **Yes**',
+              'Click **ProductType** > set **Public** = **Yes**',
+              'Click **ProductHierarchy** > set **Public** = **Yes**',
+            ],
+            important: 'If a Server Action is Public but its output Structure is NOT Public, you will get an error: "Invalid Public Action — parameter is defined as a record of type X Structure that is not public." You must set BOTH the action AND its Structures to Public.',
+          },
+          {
             title: 'SA_UploadToS3',
             instructions: [
               'Right-click **Server Actions** > **Add Server Action**',
@@ -4139,8 +4153,28 @@ export const buildPhases: readonly BuildPhase[] = [
             ],
           },
           {
+            title: 'PREREQUISITE — Set Server Actions AND Structures to Public in CC_Orchestration',
+            instructions: [
+              'Before CareConnect_UI can import anything, the Server Actions AND their Structures must be **Public** in CC_Orchestration',
+              'Open **CC_Orchestration** in Service Studio',
+              'Go to **Logic** > **Server Actions** — for each of these 4 actions, click it and set **Public** = **Yes** in Properties:',
+              '**SA_GetProductFamilies**',
+              '**SA_GetProductClasses**',
+              '**SA_GetProductTypes**',
+              '**SA_GetProductHierarchy**',
+              'Next, go to **Data** > **Structures** — for each of these 4 Structures, click it and set **Public** = **Yes**:',
+              '**ProductFamily**',
+              '**ProductClass**',
+              '**ProductType**',
+              '**ProductHierarchy**',
+              '**Publish** CC_Orchestration (**Ctrl+Shift+P**)',
+            ],
+            important: 'If you set the Server Actions to Public but forget the Structures, you will get: **"Invalid Public Action — parameter is defined as a record of type X Structure that is not public."** You MUST set BOTH the actions AND the Structures they use to Public.',
+          },
+          {
             title: 'Add Product Server Actions',
             instructions: [
+              'Switch to **CareConnect_UI** and press **Ctrl+Q**',
               'In the **Search** box at the top-left, type **CC_Orchestration**',
               'Click **CC_Orchestration** in the left panel to expand it',
               'Under **Server Actions**, check (tick the checkbox for) each of these:',
@@ -4726,6 +4760,7 @@ export const buildPhases: readonly BuildPhase[] = [
             instructions: [
               '**CC_Orchestration published?** — All Server Actions must be published before CareConnect_UI can import them via Ctrl+Q',
               '**Server Actions set to Public?** — Only actions with **Public = Yes** appear in Manage Dependencies. Check this in CC_Orchestration for each SA_Get* action',
+              '**Structures set to Public?** — If a Server Action output uses a Structure (e.g., ProductFamily), that Structure MUST also be **Public = Yes**. Otherwise you get "Invalid Public Action — parameter is defined as a record of type X Structure that is not public"',
               '**ProductAPIKey Site Property set?** — Without this, all Product API calls return 401. Set it in Service Center, not Service Studio',
               '**Product data seeded?** — Run Phase 5 to create Families, Classes, and Types in SMULab. Without this, dropdowns are empty',
               '**Data Action Fetch mode correct?** — GetFamilies should be **At Start**. GetClasses and GetTypes should be **Only on demand**',
