@@ -12,7 +12,7 @@ A dark-themed, interactive study companion for **SMU IS635 — Low Code Applicat
 | **Definitions** | 53 terms | Searchable glossary with highlighted matches |
 | **Guides** | 18 guides | Step-by-step how-to walkthroughs for common OutSystems tasks |
 | **Practice** | 225 questions | Multiple-choice quiz with progress bar, accuracy tracking, and streak counter |
-| **Build Guide** | 5 phases, 20+ sections | Comprehensive CareConnect backend build reference for OutSystems novices |
+| **Build Guide** | 6 phases, 30+ sections | Comprehensive CareConnect backend build reference for OutSystems novices (includes OpenAI wrapper) |
 
 ## Sessions Covered
 
