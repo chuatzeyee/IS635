@@ -3218,7 +3218,7 @@ export const buildPhases: readonly BuildPhase[] = [
               'Set **Value**: **CreateResponse.Response.Output.Current.Content.Current.Text**',
               'Add the third assignment:',
               'Set **Target**: **TokensUsed**',
-              'Set **Value**: **CreateResponse.Response.Usage.TotalTokens**',
+              'Set **Value**: **LongIntegerToInteger(CreateResponse.Response.Usage.Total_tokens)** — the conversion function is needed because OutSystems auto-generates token counts as **Long Integer** but our output parameter is **Integer**',
               'Add the fourth assignment:',
               'Set **Target**: **ErrorMessage**',
               'Set **Value**: **""**',
