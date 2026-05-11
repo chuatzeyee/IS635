@@ -4070,4 +4070,698 @@ export const buildPhases: readonly BuildPhase[] = [
       },
     ],
   },
+
+  // ──────────────────────────────────────────────
+  // PHASE 8: Product & Party Data in UI
+  // ──────────────────────────────────────────────
+  {
+    id: 8,
+    title: 'Product & Party Data in UI',
+    description:
+      'Wire up the **Product** and **Party** data from **CC_Orchestration** into your **CareConnect_UI** Reactive Web App. You will add dependencies, create screens with Data Actions, build cascading dropdowns for the Product hierarchy, display Party person data, and test everything end-to-end.',
+    timeEstimate: '2-3 hours',
+    sections: [
+      // ── 8.1: Architecture Overview ──
+      {
+        id: '8.1',
+        title: 'Architecture Overview',
+        summary:
+          'Understand how data flows from the external SMULab APIs through CC_Orchestration Server Actions into your UI module.',
+        steps: [
+          {
+            title: 'Understand the data flow',
+            instructions: [
+              'The **Product** and **Party** data lives on the **SMULab** environment — it is NOT stored in your CareConnect entities',
+              'In **Phase 2** you consumed the SMULab REST APIs (**SMULab_Product**, **SMULab_Party**) into **CC_Orchestration**',
+              'You then created wrapper **Server Actions** (SA_GetProductFamilies, SA_GetProductClasses, SA_GetProductTypes, SA_GetProductHierarchy) that call those APIs and return typed Lists',
+              'Your **CareConnect_UI** module will use **Ctrl+Q (Manage Dependencies)** to import those Server Actions from **CC_Orchestration**',
+              'On each UI screen, a **Data Action** (client-side fetch) calls the Server Action on screen load, and you bind the result to widgets (dropdowns, tables, lists)',
+            ],
+          },
+          {
+            title: 'Data flow diagram',
+            instructions: [
+              '**SMULab_Product API** (external) → **CC_Orchestration** (consumed REST + wrapper SA) → **CareConnect_UI** (Ctrl+Q dependency) → **Screen Data Action** → **UI Widget**',
+              '**SMULab_Party API** (external) → **CC_Orchestration** (consumed REST + wrapper SA) → **CareConnect_UI** (Ctrl+Q dependency) → **Screen Data Action** → **UI Widget**',
+            ],
+            tip: 'Every time the screen loads or a Data Action is re-triggered, a real HTTP call goes to SMULab. This means the data is always fresh but the screen needs a loading indicator while waiting.',
+          },
+          {
+            title: 'What you will build',
+            instructions: [
+              '**ProductCatalog** screen — displays the full Product hierarchy with cascading dropdowns (Family → Class → Type)',
+              '**PartyLookup** screen — looks up a person by PartyId and displays their details',
+              'Both screens will be accessible from the CareConnect UI navigation',
+            ],
+          },
+        ],
+      },
+
+      // ── 8.2: Add Dependencies from CC_Orchestration ──
+      {
+        id: '8.2',
+        title: 'Add Dependencies from CC_Orchestration',
+        summary:
+          'Use **Manage Dependencies (Ctrl+Q)** to import the Product and Party wrapper Server Actions and their Structures into **CareConnect_UI**.',
+        steps: [
+          {
+            title: 'Open CareConnect_UI in Service Studio',
+            instructions: [
+              'Open **Service Studio** and double-click **CareConnect_UI** to open the module',
+              'If you have not created CareConnect_UI yet, go to your **CareConnect** application > right-click > **Add Module** > Name: **CareConnect_UI**, Type: **Reactive Web App**',
+            ],
+          },
+          {
+            title: 'Open Manage Dependencies',
+            instructions: [
+              'Press **Ctrl+Q** — the **Manage Dependencies** dialog opens',
+              'This dialog shows all modules on your environment that expose public Server Actions, Entities, or Structures',
+            ],
+          },
+          {
+            title: 'Add Product Server Actions',
+            instructions: [
+              'In the **Search** box at the top-left, type **CC_Orchestration**',
+              'Click **CC_Orchestration** in the left panel to expand it',
+              'Under **Server Actions**, check (tick the checkbox for) each of these:',
+              '**SA_GetProductFamilies** — returns a list of product families',
+              '**SA_GetProductClasses** — takes a ProductFamilyId, returns a list of product classes',
+              '**SA_GetProductTypes** — takes a ProductClassId, returns a list of product types',
+              '**SA_GetProductHierarchy** — returns the full hierarchy in one call',
+            ],
+            important: 'You MUST check the checkbox — just expanding the tree is not enough. The checkbox appears to the LEFT of each action name. A checked item shows a filled checkbox.',
+          },
+          {
+            title: 'Add Party Server Actions',
+            instructions: [
+              'Still inside **Manage Dependencies** with **CC_Orchestration** expanded:',
+              'Under **Server Actions**, also check:',
+              '**SA_DoRegisterUser** — registers a new user via the Party API (you may already have this from Phase 5)',
+              '**SA_DoLoginUser** — logs in a user and returns their PartyId, role, and name',
+              'If you need raw Party lookups, also check any **GetPerson**-related actions that CC_Orchestration exposes',
+            ],
+            tip: 'If you do not see a Server Action listed, it means CC_Orchestration has not been published with that action set to **Public = Yes**. Go back to CC_Orchestration, set the action\'s **Public** property to **Yes**, re-publish (**Ctrl+Shift+P**), then come back here and click **Refresh** in Manage Dependencies.',
+          },
+          {
+            title: 'Add Structures (auto-imported)',
+            instructions: [
+              'When you check a Server Action, OutSystems **automatically imports** all Structures used by that action\'s inputs and outputs',
+              'After checking the actions above, you should see these Structures appear under **CC_Orchestration > Structures**:',
+              '**ProductFamily** — used by SA_GetProductFamilies output',
+              '**ProductClass** — used by SA_GetProductClasses output',
+              '**ProductType** — used by SA_GetProductTypes output',
+              '**ProductHierarchy** — used by SA_GetProductHierarchy output',
+              'You do NOT need to manually check Structures — they come along automatically',
+            ],
+          },
+          {
+            title: 'Apply and verify',
+            instructions: [
+              'Click **Apply** at the bottom-right of the Manage Dependencies dialog',
+              'Wait for the refresh to complete (progress bar at the bottom)',
+              'Click **Close**',
+              'Verify: go to the **Logic** tab > **Server Actions** > you should see a **CC_Orchestration** folder containing the actions you imported',
+              'Verify: go to the **Data** tab > **Structures** > you should see the imported Structures (ProductFamily, ProductClass, ProductType, etc.)',
+            ],
+            important: 'If you see red errors after applying, it usually means CC_Orchestration was not published. Go publish it first (Ctrl+Shift+P in CC_Orchestration), then retry Ctrl+Q in CareConnect_UI.',
+          },
+        ],
+      },
+
+      // ── 8.3: ProductCatalog Screen — Setup ──
+      {
+        id: '8.3',
+        title: 'ProductCatalog Screen — Setup',
+        summary:
+          'Create the **ProductCatalog** screen, add Local Variables for the cascading dropdown state, and create Data Actions to fetch product data on screen load.',
+        steps: [
+          {
+            title: 'Create the screen',
+            instructions: [
+              'Go to the **Interface** tab > **UI Flows** > **MainFlow** (or your main flow)',
+              'Right-click **MainFlow** > **Add Screen**',
+              'Select **Empty** template (do NOT pick a pre-built template — we want full control)',
+              'Name: **ProductCatalog**',
+              'Click **Create Screen**',
+            ],
+          },
+          {
+            title: 'Set the screen role (optional)',
+            instructions: [
+              'Click on the **ProductCatalog** screen name in the tree',
+              'In the **Properties** panel on the right, find **Roles**',
+              'If you want this screen accessible without login, check **Anonymous**',
+              'If you want it restricted to logged-in users, check **Registered** (default)',
+            ],
+            tip: 'For testing purposes, set it to **Anonymous** so you can access it without logging in. You can restrict it later.',
+          },
+          {
+            title: 'Add Local Variables for dropdown state',
+            instructions: [
+              'Double-click the **ProductCatalog** screen to open it in the editor',
+              'In the **Widget Tree** panel (right side), right-click the screen name > **Add Local Variable**',
+              'Create these 3 Local Variables one by one:',
+              '**SelectedFamilyId** — Data Type: **Text**, Default Value: **""**',
+              '**SelectedClassId** — Data Type: **Text**, Default Value: **""**',
+              '**SelectedTypeId** — Data Type: **Text**, Default Value: **""**',
+            ],
+            important: 'These hold the currently selected dropdown value. When the user picks a Family, we store its ID in SelectedFamilyId. When they pick a Class, we store it in SelectedClassId. This is how cascading dropdowns work — the next dropdown depends on the previous selection.',
+          },
+          {
+            title: 'Create Data Action: GetFamilies',
+            instructions: [
+              'In the **Widget Tree**, right-click the screen name > **Add Data Action**',
+              'Name: **GetFamilies**',
+              'The Data Action flow editor opens — you see a **Start** and **End** node',
+              'From the **Logic** tab (left panel), expand **Server Actions** > **CC_Orchestration** > drag **SA_GetProductFamilies** onto the flow between **Start** and **End**',
+              'No input parameters needed — SA_GetProductFamilies takes no inputs',
+              'The output **SA_GetProductFamilies.ProductFamilies** is now available to bind to widgets',
+            ],
+            tip: 'Data Actions run **automatically when the screen loads**. You do not need to trigger them manually. Every time the screen opens, GetFamilies runs and fetches fresh data from the SMULab Product API.',
+          },
+          {
+            title: 'Create Data Action: GetClasses',
+            instructions: [
+              'Right-click the screen name > **Add Data Action**',
+              'Name: **GetClasses**',
+              'The flow editor opens',
+              'From the **Logic** tab, drag **SA_GetProductClasses** onto the flow between **Start** and **End**',
+              'Click on the **SA_GetProductClasses** node — in **Properties**, set:',
+              '**ProductFamilyId** = **SelectedFamilyId**',
+              'Now click on the **GetClasses** Data Action name in the tree (the root, not the node inside)',
+              'In **Properties**, find **Fetch** — change it from **At Start** to **Only on demand**',
+            ],
+            important: 'Setting Fetch to **Only on demand** means this Data Action does NOT run when the screen loads. It only runs when you explicitly call **GetClasses.Fetch()** in a Client Action. This is critical for cascading behavior — classes should only load AFTER the user picks a family.',
+          },
+          {
+            title: 'Create Data Action: GetTypes',
+            instructions: [
+              'Right-click the screen name > **Add Data Action**',
+              'Name: **GetTypes**',
+              'Drag **SA_GetProductTypes** onto the flow between **Start** and **End**',
+              'Click on the **SA_GetProductTypes** node — in **Properties**, set:',
+              '**ProductClassId** = **SelectedClassId**',
+              'Click on the **GetTypes** Data Action name in the tree',
+              'In **Properties**, change **Fetch** to **Only on demand**',
+            ],
+          },
+        ],
+      },
+
+      // ── 8.4: ProductCatalog Screen — Build the UI ──
+      {
+        id: '8.4',
+        title: 'ProductCatalog Screen — Build the UI',
+        summary:
+          'Add a title, 3 cascading dropdowns (Family → Class → Type), and a results table to the ProductCatalog screen.',
+        steps: [
+          {
+            title: 'Add the page title',
+            instructions: [
+              'Open the **ProductCatalog** screen in the editor (double-click it)',
+              'From the **Toolbox** (left panel), drag an **Expression** widget into the **Content** area of the screen',
+              'Set its **Value** to: **"Product Catalog"**',
+              'In **Properties**, under **Style**, set **Style Classes** to **heading2** (or your theme\'s heading class)',
+              'Alternatively, drag a **Text** widget and type **Product Catalog** — then bold it using the toolbar',
+            ],
+          },
+          {
+            title: 'Add the Family dropdown',
+            instructions: [
+              'From the **Toolbox**, drag a **Dropdown** widget below the title',
+              'In the **Dropdown Properties** panel:',
+              '**Variable** = **SelectedFamilyId** (the Local Variable you created in 8.3)',
+              '**List** = **GetFamilies.List** (the output of your GetFamilies Data Action)',
+              '**Options Text** = **ProductFamily.Name** (the display text for each option)',
+              '**Options Value** = **ProductFamily.Id** (the value stored when selected)',
+              'Add a **Label** widget above the Dropdown — set its text to **"Select Product Family"**',
+            ],
+            important: 'If you don\'t see **GetFamilies.List** in the dropdown suggestions, make sure you created the GetFamilies Data Action in step 8.3 and that it contains the SA_GetProductFamilies node.',
+          },
+          {
+            title: 'Add On Change handler for Family dropdown',
+            instructions: [
+              'Click on the **Family Dropdown** widget',
+              'In **Properties**, find **Events** > **On Change**',
+              'Click **(New Client Action)** — this creates a new Client Action named **DropdownOnChange** (rename it to **OnFamilyChange**)',
+              'The Client Action flow editor opens with **Start** and **End** nodes',
+              'From the **Toolbox** (left panel under Client Actions), drag an **Assign** node after **Start**',
+              'In the **Assign**, add one assignment:',
+              '**SelectedClassId** = **""** (reset the class selection when family changes)',
+              'Drag another **Assign** node after the first one:',
+              '**SelectedTypeId** = **""** (also reset the type selection)',
+              'From the left panel, find the **GetClasses** Data Action — drag its **Fetch** node onto the flow after the second Assign',
+              'This calls **GetClasses.Fetch()** which re-runs the GetClasses Data Action with the new SelectedFamilyId',
+              'Connect to **End**',
+            ],
+            tip: 'The full flow is: **Start** → **Assign** (reset SelectedClassId to "") → **Assign** (reset SelectedTypeId to "") → **GetClasses.Fetch** → **End**. When the user picks a new family, this clears the downstream selections and loads the classes for that family.',
+          },
+          {
+            title: 'Add the Class dropdown',
+            instructions: [
+              'From the **Toolbox**, drag another **Dropdown** widget below the Family dropdown',
+              'In **Dropdown Properties**:',
+              '**Variable** = **SelectedClassId**',
+              '**List** = **GetClasses.List**',
+              '**Options Text** = **ProductClass.Name**',
+              '**Options Value** = **ProductClass.Id**',
+              'Add a **Label** widget above it — text: **"Select Product Class"**',
+              'In the Dropdown **Properties**, find **Enabled** — set it to: **SelectedFamilyId <> ""**',
+            ],
+            important: 'Setting **Enabled** to **SelectedFamilyId <> ""** makes this dropdown disabled (greyed out) until the user selects a family. This prevents confusion — users can\'t pick a class before picking a family.',
+          },
+          {
+            title: 'Add On Change handler for Class dropdown',
+            instructions: [
+              'Click on the **Class Dropdown** widget',
+              'In **Properties** > **Events** > **On Change** > click **(New Client Action)**',
+              'Rename to **OnClassChange**',
+              'In the flow editor:',
+              'Drag an **Assign** node after **Start**:',
+              '**SelectedTypeId** = **""** (reset the type selection)',
+              'Drag **GetTypes.Fetch** after the Assign node',
+              'Connect to **End**',
+              'Full flow: **Start** → **Assign** (reset SelectedTypeId to "") → **GetTypes.Fetch** → **End**',
+            ],
+          },
+          {
+            title: 'Add the Type dropdown',
+            instructions: [
+              'From the **Toolbox**, drag another **Dropdown** widget below the Class dropdown',
+              'In **Dropdown Properties**:',
+              '**Variable** = **SelectedTypeId**',
+              '**List** = **GetTypes.List**',
+              '**Options Text** = **ProductType.Name**',
+              '**Options Value** = **ProductType.Id**',
+              'Add a **Label** widget above it — text: **"Select Product Type"**',
+              'In the Dropdown **Properties**, set **Enabled** to: **SelectedClassId <> ""**',
+            ],
+          },
+          {
+            title: 'Add a results display (optional)',
+            instructions: [
+              'Below the dropdowns, drag an **Expression** widget',
+              'Set its **Value** to:',
+              '**If(SelectedTypeId <> "", "Selected Type: " + SelectedTypeId, If(SelectedClassId <> "", "Selected Class: " + SelectedClassId, If(SelectedFamilyId <> "", "Selected Family: " + SelectedFamilyId, "No selection yet")))**',
+              'This shows the current selection state as a simple text readout',
+            ],
+            tip: 'In a real app, you would use the SelectedTypeId to filter caregivers or create a care request. For now, this expression confirms the cascading dropdowns are working correctly.',
+          },
+          {
+            title: 'Add an empty state message',
+            instructions: [
+              'Below each dropdown, you can add an **If** widget to show a message when no data is available:',
+              'Drag an **If** widget below the Class dropdown',
+              'Condition: **GetClasses.List.Empty and SelectedFamilyId <> ""**',
+              'True branch: drag a **Text** widget — text: **"No product classes found for this family"**',
+              'False branch: leave empty',
+              'Repeat for the Type dropdown:',
+              'Condition: **GetTypes.List.Empty and SelectedClassId <> ""**',
+              'True branch: text: **"No product types found for this class"**',
+            ],
+          },
+        ],
+      },
+
+      // ── 8.5: ProductCatalog Screen — Full Hierarchy Table ──
+      {
+        id: '8.5',
+        title: 'ProductCatalog Screen — Full Hierarchy Table',
+        summary:
+          'Add a table below the dropdowns that displays the complete Product hierarchy from SA_GetProductHierarchy in a single view.',
+        steps: [
+          {
+            title: 'Create Data Action: GetFullHierarchy',
+            instructions: [
+              'In the **Widget Tree**, right-click the **ProductCatalog** screen name > **Add Data Action**',
+              'Name: **GetFullHierarchy**',
+              'From the **Logic** tab, drag **SA_GetProductHierarchy** onto the flow between **Start** and **End**',
+              'Leave **Fetch** as **At Start** (we want this to load automatically with the page)',
+            ],
+          },
+          {
+            title: 'Add a section heading',
+            instructions: [
+              'Below the dropdowns section, drag a **Text** widget',
+              'Type: **Full Product Hierarchy**',
+              'Bold it using the toolbar',
+            ],
+          },
+          {
+            title: 'Add a Table Records widget',
+            instructions: [
+              'From the **Toolbox**, drag a **Table Records** widget below the heading',
+              'In the **Properties** panel:',
+              '**Source** = **GetFullHierarchy.List** (the output of your Data Action)',
+              'OutSystems auto-generates columns for each attribute of the **ProductHierarchy** Structure',
+              'The columns depend on the Structure, but typically include: **ProductFamilyName**, **ProductClassName**, **ProductTypeName**, **ProductFamilyId**, **ProductClassId**, **ProductTypeId**',
+            ],
+            tip: 'If you only want to show names (not IDs), delete the ID columns: right-click a column header > **Delete Column**.',
+          },
+          {
+            title: 'Clean up the table columns',
+            instructions: [
+              'Click on each **Header Cell** (the top row of the table) and rename them to friendly names:',
+              '**Product Family** (for the ProductFamilyName column)',
+              '**Product Class** (for the ProductClassName column)',
+              '**Product Type** (for the ProductTypeName column)',
+              'Delete any ID columns you don\'t want to display by right-clicking the column > **Delete Column**',
+              'If no columns were auto-generated, manually add them:',
+              'Right-click the Table Records > **Add Column** — then drag an **Expression** widget into the cell and set Value to **GetFullHierarchy.List.Current.ProductFamilyName** (repeat for each field)',
+            ],
+          },
+          {
+            title: 'Add empty state for the table',
+            instructions: [
+              'Drag an **If** widget above the Table Records widget',
+              'Condition: **GetFullHierarchy.List.Empty**',
+              'True branch: drag a **Text** widget — text: **"No product data found. Make sure you have seeded product data in Phase 5."**',
+              'False branch: move the Table Records widget into this branch (drag it into the False placeholder)',
+            ],
+          },
+          {
+            title: 'Add a loading indicator',
+            instructions: [
+              'Drag an **If** widget above the table section',
+              'Condition: **GetFullHierarchy.IsDataFetched = False**',
+              'True branch: drag a **Text** widget — text: **"Loading product data..."**',
+              'False branch: put the table (and its empty-state If) inside this branch',
+              'This shows "Loading..." while the Data Action is fetching from the API',
+            ],
+            tip: '**IsDataFetched** is a built-in property of every Data Action. It is **False** while the fetch is in progress and **True** once it completes (successfully or with an error).',
+          },
+        ],
+      },
+
+      // ── 8.6: PartyLookup Screen — Setup & Build ──
+      {
+        id: '8.6',
+        title: 'PartyLookup Screen — Setup & Build',
+        summary:
+          'Create a **PartyLookup** screen where a user can enter a PartyId and see that person\'s details from the SMULab Party API.',
+        steps: [
+          {
+            title: 'Understand Party data access',
+            instructions: [
+              'In Phase 2, you consumed the **SMULab_Party** REST API which includes:',
+              '**GetPerson** — takes a **PersonId** (also called PartyId) and returns the person\'s details (GivenName, FamilyName, Email, etc.)',
+              '**AddPerson** — creates a new person in the Party system',
+              '**GetDocumentTypes** — returns a list of document types',
+              '**GetRoleTypes** — returns a list of role types',
+              'The **SA_DoRegisterUser** and **SA_DoLoginUser** actions in CC_Orchestration already use AddPerson and GetPerson internally',
+              'For this screen, we will call **GetPerson** from CC_Orchestration to look up a person by their PartyId',
+            ],
+          },
+          {
+            title: 'Ensure CC_Orchestration has a public SA_GetPerson action',
+            instructions: [
+              'Open **CC_Orchestration** in Service Studio',
+              'Check if you already have a **SA_GetPerson** Server Action. If not, create one:',
+              'Right-click **Server Actions** > **Add Server Action**',
+              'Name: **SA_GetPerson**',
+              'Set **Public** = **Yes** in Properties',
+              'Add Input Parameter: **PersonId** — Data Type: **Text**, Is Mandatory: **Yes**',
+              'Add Output Parameters (create each one):',
+              '**GivenName** — Data Type: **Text**',
+              '**FamilyName** — Data Type: **Text**',
+              '**Email** — Data Type: **Text**',
+              '**BirthDate** — Data Type: **Text**',
+              '**Success** — Data Type: **Boolean**',
+              '**ErrorMessage** — Data Type: **Text**',
+            ],
+          },
+          {
+            title: 'Build the SA_GetPerson flow',
+            instructions: [
+              'Open the **SA_GetPerson** Server Action flow',
+              'Drag the consumed **GetPerson** REST method from **Logic** > **Integrations** > **REST** > **Party** onto the flow after **Start**',
+              'Set its **PersonId** parameter = the input **PersonId**',
+              'Drag an **Assign** node after **GetPerson**:',
+              '**GivenName** = **GetPerson.Response.GivenName** (or the matching attribute from the Structure)',
+              '**FamilyName** = **GetPerson.Response.FamilyName**',
+              '**Email** = **GetPerson.Response.Email**',
+              '**BirthDate** = **GetPerson.Response.BirthDate**',
+              '**Success** = **True**',
+              'Add an **Exception Handler** > catch **AllExceptions**:',
+              'Assign **Success** = **False**, **ErrorMessage** = **AllExceptions.ExceptionMessage**',
+              'Connect to **End**',
+              '**Publish** CC_Orchestration (**Ctrl+Shift+P**)',
+            ],
+            important: 'The exact attribute names (GivenName, FamilyName, etc.) depend on how OutSystems parsed the Party Swagger. Check the auto-generated **GetPerson** response Structure under **Data** > **Structures** to see the exact names. Map them to your output parameters accordingly.',
+          },
+          {
+            title: 'Add the dependency in CareConnect_UI',
+            instructions: [
+              'Switch to **CareConnect_UI** module',
+              'Press **Ctrl+Q** (Manage Dependencies)',
+              'Find **CC_Orchestration** > expand **Server Actions**',
+              'Check **SA_GetPerson** (you may need to click **Refresh** if you just published CC_Orchestration)',
+              'Click **Apply** > **Close**',
+            ],
+          },
+          {
+            title: 'Create the PartyLookup screen',
+            instructions: [
+              'Go to the **Interface** tab > **UI Flows** > **MainFlow**',
+              'Right-click > **Add Screen** > **Empty** template',
+              'Name: **PartyLookup**',
+              'Click **Create Screen**',
+              'In Properties, set **Roles** to **Anonymous** (for testing)',
+            ],
+          },
+          {
+            title: 'Add Local Variables',
+            instructions: [
+              'Right-click the **PartyLookup** screen > **Add Local Variable**',
+              'Create these Local Variables:',
+              '**SearchPartyId** — Data Type: **Text**, Default Value: **""** — the PartyId the user types in',
+              '**PersonGivenName** — Data Type: **Text**, Default Value: **""** — filled after lookup',
+              '**PersonFamilyName** — Data Type: **Text**, Default Value: **""**',
+              '**PersonEmail** — Data Type: **Text**, Default Value: **""**',
+              '**PersonBirthDate** — Data Type: **Text**, Default Value: **""**',
+              '**LookupSuccess** — Data Type: **Boolean**, Default Value: **False**',
+              '**LookupError** — Data Type: **Text**, Default Value: **""**',
+              '**HasSearched** — Data Type: **Boolean**, Default Value: **False** — tracks whether the user has clicked Lookup yet',
+            ],
+          },
+          {
+            title: 'Build the screen UI — Input section',
+            instructions: [
+              'Double-click the **PartyLookup** screen to open the editor',
+              'Drag a **Text** widget into the **Content** area — type **Party Person Lookup** and bold it (this is your page title)',
+              'Below the title, drag an **Input** widget from the Toolbox',
+              'In **Input Properties**: **Variable** = **SearchPartyId**',
+              'Above the Input, drag a **Label** widget — text: **"Enter Party ID"**',
+              'Below the Input, drag a **Button** widget — text: **"Lookup Person"**',
+            ],
+          },
+          {
+            title: 'Build the Lookup Client Action',
+            instructions: [
+              'Click on the **Lookup Person** button',
+              'In **Properties** > **Events** > **On Click** > select **(New Client Action)**',
+              'Rename the Client Action to **OnLookupClick**',
+              'The flow editor opens. Build this flow:',
+              '**Step 1**: Drag an **Assign** node after **Start**:',
+              '**HasSearched** = **True**',
+              '**Step 2**: Drag **SA_GetPerson** (from **Logic** > **Server Actions** > **CC_Orchestration**) after the Assign',
+              'Set its **PersonId** parameter = **SearchPartyId**',
+              '**Step 3**: Drag an **Assign** node after SA_GetPerson:',
+              '**PersonGivenName** = **SA_GetPerson.GivenName**',
+              '**PersonFamilyName** = **SA_GetPerson.FamilyName**',
+              '**PersonEmail** = **SA_GetPerson.Email**',
+              '**PersonBirthDate** = **SA_GetPerson.BirthDate**',
+              '**LookupSuccess** = **SA_GetPerson.Success**',
+              '**LookupError** = **SA_GetPerson.ErrorMessage**',
+              'Connect to **End**',
+              'Full flow: **Start** → **Assign** (HasSearched=True) → **SA_GetPerson** → **Assign** (copy outputs) → **End**',
+            ],
+          },
+          {
+            title: 'Build the screen UI — Results section',
+            instructions: [
+              'Below the Lookup button, drag an **If** widget',
+              'Condition: **HasSearched**',
+              'In the **True** branch:',
+              'Drag another **If** widget — Condition: **LookupSuccess**',
+              'In the **True** branch (success):',
+              'Drag 4 **Expression** widgets, one for each field:',
+              '**"Given Name: " + PersonGivenName**',
+              '**"Family Name: " + PersonFamilyName**',
+              '**"Email: " + PersonEmail**',
+              '**"Birth Date: " + PersonBirthDate**',
+              'In the **False** branch (error):',
+              'Drag an **Expression** widget — Value: **"Error: " + LookupError**',
+              'In the **False** branch of the outer If (HasSearched = False):',
+              'Leave it empty, or drag a **Text** widget: **"Enter a Party ID above and click Lookup"**',
+            ],
+          },
+        ],
+      },
+
+      // ── 8.7: Add Navigation Links ──
+      {
+        id: '8.7',
+        title: 'Add Navigation Links',
+        summary:
+          'Add links or buttons on your **Home** screen (or common menu) so users can navigate to the ProductCatalog and PartyLookup screens.',
+        steps: [
+          {
+            title: 'Add a link on the Home screen',
+            instructions: [
+              'Open your **Home** screen (or whichever screen is your main landing page)',
+              'Drag a **Link** widget from the **Toolbox** into the content area',
+              'In **Link Properties**:',
+              '**Text** = **"Product Catalog"**',
+              '**On Click** > **Destination** = **ProductCatalog** (select it from the screen dropdown)',
+              'Drag another **Link** widget below it:',
+              '**Text** = **"Party Lookup"**',
+              '**On Click** > **Destination** = **PartyLookup**',
+            ],
+            tip: 'If you prefer Buttons instead of Links, drag a **Button** widget, set its **On Click** event to a **(New Client Action)**, and inside that Client Action use a **Destination** node (or **RedirectToURL**) to navigate to the target screen.',
+          },
+          {
+            title: 'Add to the Menu (if using a menu web block)',
+            instructions: [
+              'If your application uses a **Menu** web block (common in OutSystems templates):',
+              'Go to **Interface** > **UI Flows** > **Common** > **Menu**',
+              'Open the Menu web block',
+              'Add a new **Menu Item** or **Link** for **ProductCatalog**',
+              'Add another for **PartyLookup**',
+              'Set the **Destination** property of each to the corresponding screen',
+              'If you are using a custom navigation bar, add the links there instead',
+            ],
+          },
+        ],
+      },
+
+      // ── 8.8: Publish, Test & Troubleshoot ──
+      {
+        id: '8.8',
+        title: 'Publish, Test & Troubleshoot',
+        summary:
+          'Publish **CareConnect_UI**, open it in the browser, and verify that Product and Party data loads correctly.',
+        steps: [
+          {
+            title: 'Publish the module',
+            instructions: [
+              'In **CareConnect_UI**, press **Ctrl+Shift+P** to publish',
+              'Wait for the green **"1-Click Publish completed"** message',
+              'If you see errors, read them carefully — most common issues:',
+              '**"Missing dependency"** — go back to Ctrl+Q and make sure all Server Actions are checked',
+              '**"Unknown Server Action"** — CC_Orchestration may not be published; publish it first',
+              '**"Type mismatch"** — check that you are using the correct Structure types from CC_Orchestration, not manually created ones',
+            ],
+          },
+          {
+            title: 'Open in browser',
+            instructions: [
+              'After publishing, click the **Open in Browser** button (blue globe icon) in Service Studio',
+              'Or navigate directly to: **https://smuedu-dev.outsystemsenterprise.com/CareConnect_UI/ProductCatalog**',
+              '(Replace with your actual environment URL if different)',
+            ],
+          },
+          {
+            title: 'Test the ProductCatalog screen',
+            instructions: [
+              'The **Family dropdown** should populate automatically on page load',
+              'Select a family — the **Class dropdown** should become enabled and populate',
+              'Select a class — the **Type dropdown** should become enabled and populate',
+              'The **Full Hierarchy table** at the bottom should show all products',
+              'If the Family dropdown is empty, it means no product data has been seeded — complete **Phase 5** first',
+            ],
+          },
+          {
+            title: 'Test the PartyLookup screen',
+            instructions: [
+              'Navigate to the **PartyLookup** screen',
+              'Enter a valid **PartyId** (you can get one from a previous registration, or from the Party API Swagger UI)',
+              'Click **Lookup Person**',
+              'The person\'s details (GivenName, FamilyName, Email, BirthDate) should appear below',
+              'If you get an error, check that the PartyId exists in the Party system',
+            ],
+          },
+          {
+            title: 'Troubleshooting: Dropdown is empty',
+            instructions: [
+              'Check that you seeded product data in **Phase 5** — open Swagger UI for CC_Orchestration and call **GET /GetProductFamilies**. If it returns an empty list, go back to Phase 5',
+              'Check that the **ProductAPIKey** Site Property is set — go to **Service Center** > **Modules** > **CC_Orchestration** > **Site Properties** > verify **ProductAPIKey** has a value',
+              'Check that the Data Action is wired correctly — open the **GetFamilies** Data Action and verify it contains the **SA_GetProductFamilies** node',
+              'Check **Service Center** > **Monitoring** > **Errors** for any error logs from the REST call',
+            ],
+          },
+          {
+            title: 'Troubleshooting: Cascading dropdown does not update',
+            instructions: [
+              'Verify the **On Change** Client Action on the Family dropdown calls **GetClasses.Fetch()**',
+              'Verify the **On Change** Client Action on the Class dropdown calls **GetTypes.Fetch()**',
+              'Make sure the **GetClasses** Data Action has **Fetch** set to **Only on demand** (not At Start)',
+              'Make sure the **GetTypes** Data Action has **Fetch** set to **Only on demand**',
+              'Check that the **ProductFamilyId** parameter inside GetClasses is bound to **SelectedFamilyId** (not hardcoded)',
+              'Check that the **ProductClassId** parameter inside GetTypes is bound to **SelectedClassId** (not hardcoded)',
+            ],
+          },
+          {
+            title: 'Troubleshooting: Party lookup returns error',
+            instructions: [
+              'Check that **SA_GetPerson** exists in CC_Orchestration and is set to **Public = Yes**',
+              'Check that the **PersonId** you entered is a valid PartyId from the SMULab Party system',
+              'Check **Service Center** > **Monitoring** > **Errors** for the actual error message from the Party API',
+              'Verify the **GetPerson** consumed REST method under **Logic** > **Integrations** > **REST** > **Party** still has the correct Swagger URL',
+              'If the Party API is returning 401/403, your API key or environment credentials may have changed',
+            ],
+          },
+        ],
+      },
+
+      // ── 8.9: Common Gotchas & Checklist ──
+      {
+        id: '8.9',
+        title: 'Common Gotchas & Checklist',
+        summary:
+          'A checklist of things to verify and common mistakes when wiring Product & Party data into the UI.',
+        steps: [
+          {
+            title: 'Pre-flight checklist',
+            instructions: [
+              '**CC_Orchestration published?** — All Server Actions must be published before CareConnect_UI can import them via Ctrl+Q',
+              '**Server Actions set to Public?** — Only actions with **Public = Yes** appear in Manage Dependencies. Check this in CC_Orchestration for each SA_Get* action',
+              '**ProductAPIKey Site Property set?** — Without this, all Product API calls return 401. Set it in Service Center, not Service Studio',
+              '**Product data seeded?** — Run Phase 5 to create Families, Classes, and Types in SMULab. Without this, dropdowns are empty',
+              '**Data Action Fetch mode correct?** — GetFamilies should be **At Start**. GetClasses and GetTypes should be **Only on demand**',
+              '**On Change handlers wired?** — Each dropdown needs an On Change Client Action that calls the next level\'s .Fetch()',
+            ],
+          },
+          {
+            title: 'Common mistake: Using wrong Structure types',
+            instructions: [
+              'If you manually created Product Structures (e.g., **MyProductFamily**), they are DIFFERENT from the auto-imported Structures from CC_Orchestration',
+              'Always use the Structures that come from **Manage Dependencies** — these match the Server Action output types exactly',
+              'If you see **"Type mismatch"** errors, delete your manual Structures and re-import via Ctrl+Q',
+            ],
+          },
+          {
+            title: 'Common mistake: Data Action runs but list is empty',
+            instructions: [
+              'The Data Action ran successfully but returned an empty list — this is NOT an error',
+              'It means the SMULab API returned no data for your query',
+              'For **GetProductFamilies**: you haven\'t seeded data in Phase 5',
+              'For **GetProductClasses**: the ProductFamilyId you passed has no classes',
+              'For **GetProductTypes**: the ProductClassId you passed has no types',
+              'Always check with Swagger first: open CC_Orchestration\'s Swagger UI and call the endpoint manually to confirm data exists',
+            ],
+          },
+          {
+            title: 'Common mistake: Forgetting to reset downstream selections',
+            instructions: [
+              'When the user changes the Family dropdown, you MUST reset **SelectedClassId** and **SelectedTypeId** to **""** in the On Change Client Action',
+              'If you forget this, the Class and Type dropdowns will show stale data from the previous selection',
+              'Similarly, when the user changes the Class dropdown, reset **SelectedTypeId** to **""**',
+              'This is why the On Change handlers include Assign nodes that clear the downstream variables before calling .Fetch()',
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ]
