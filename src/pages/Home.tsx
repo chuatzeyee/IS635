@@ -59,10 +59,10 @@ export default function Home() {
           </span>
         </div>
         <h1 className="text-4xl font-bold text-ink mb-2 tracking-tight">
-          IS635 Low Code App Dev
+          ☭ IS635 StudyComrade
         </h1>
         <p className="text-lg text-glow font-medium mb-6 font-mono tracking-wide">
-          Cheat Sheet & Study Guide
+         Low Code App Dev
         </p>
         <p className="text-ink-secondary max-w-2xl mx-auto leading-relaxed">
           A comprehensive study resource for SMU IS635 covering OutSystems

@@ -1,4 +1,4 @@
-# IS635 Cheat Sheet & Study Guide
+# ☭ IS635 StudyComrade
 
 A dark-themed, interactive study companion for **SMU IS635 — Low Code Application Development** (OutSystems).
 
