@@ -1,73 +1,52 @@
-# React + TypeScript + Vite
+# IS635 Cheat Sheet & Study Guide
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A dark-themed, interactive study companion for **SMU IS635 — Low Code Application Development** (OutSystems).
 
-Currently, two official plugins are available:
+**Live site:** [chuatzeyee.github.io/IS635](https://chuatzeyee.github.io/IS635/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What's Inside
 
-## React Compiler
+| Section | Count | Description |
+|---------|-------|-------------|
+| **Topics** | 55 topics across 5 sessions | Key concepts with expandable sections and session-colored borders |
+| **Definitions** | 53 terms | Searchable glossary with highlighted matches |
+| **Guides** | 18 guides | Step-by-step how-to walkthroughs for common OutSystems tasks |
+| **Practice** | 225 questions | Multiple-choice quiz with progress bar, accuracy tracking, and streak counter |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Sessions Covered
 
-## Expanding the ESLint configuration
+1. Introduction to LCAP
+2. Architecture Best Practices
+3. Data Layer
+4. Logic Layer
+5. Interface Layer
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech Stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **React 19** + **TypeScript 6**
+- **Vite 8** (build + dev server)
+- **Tailwind CSS 4** with custom design tokens
+- **Inter** + **JetBrains Mono** fonts
+- Deployed to **GitHub Pages** via `gh-pages`
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Local Development
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open [http://localhost:5173/IS635/](http://localhost:5173/IS635/)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Build & Deploy
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npx gh-pages -d dist
 ```
+
+## Design
+
+Vintage terminal aesthetic — dark grey surfaces with green accent. Floating bottom pill navigation, staggered fade-in animations, animated expand/collapse panels, and search highlighting.
+
+Design tokens are defined in `src/index.css` under `@theme`. Full design system documentation lives in `.interface-design/system.md`.
