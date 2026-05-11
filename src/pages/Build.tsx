@@ -31,6 +31,16 @@ function AnimatedPanel({ isOpen, children }: { readonly isOpen: boolean; readonl
   )
 }
 
+function renderBold(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="text-ink font-semibold font-mono text-[13px]">{part.slice(2, -2)}</strong>
+    }
+    return part
+  })
+}
+
 function StepCard({ step, stepIndex }: { readonly step: BuildStep; readonly stepIndex: number }) {
   return (
     <div className="pl-4 border-l-2 border-edge">
@@ -40,11 +50,11 @@ function StepCard({ step, stepIndex }: { readonly step: BuildStep; readonly step
         </span>
         {step.title}
       </h4>
-      <ul className="space-y-1 ml-7">
+      <ul className="space-y-1.5 ml-7">
         {step.instructions.map((inst, i) => (
-          <li key={i} className="text-sm text-ink-secondary flex items-start gap-2">
+          <li key={i} className="text-sm text-ink-secondary flex items-start gap-2 leading-relaxed">
             <span className="mt-1.5 flex-shrink-0 w-1 h-1 rounded-full bg-ink-muted" />
-            {inst}
+            <span>{renderBold(inst)}</span>
           </li>
         ))}
       </ul>
