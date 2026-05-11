@@ -785,11 +785,21 @@ export const buildPhases: readonly BuildPhase[] = [
             ],
           },
           {
+            title: 'Set Entity and Server Actions to Public',
+            instructions: [
+              'Before publishing, you must set the Entity and all Server Actions to **Public** so other modules can consume them via Ctrl+Q:',
+              '**Data** tab > **Entities** > click **Family** > in **Properties**, set **Public** = **Yes**',
+              '**Logic** tab > **Server Actions** > for EACH Server Action (**SA_CreateFamily**, **SA_GetFamilyByUserId**, **SA_GetFamilyById**, **SA_UpdateFamily**, **SA_ListFamiliesByRating**): click it > set **Public** = **Yes**',
+            ],
+            important: 'If a Server Action is Public but the Entity it returns is NOT Public, you will get: **"Invalid Public Action — parameter is defined as a record of type Family Entity that is not public."** You must set BOTH the Server Actions AND the Entity to Public.',
+          },
+          {
             title: 'Publish the Family service',
             instructions: [
               'Press **Ctrl+Shift+P** to publish the **CareConnect_Family** module',
               'Wait for the green **"1-Click Publish completed"** message at the bottom of Service Studio',
               'If you see errors, read them and fix before proceeding — common issues:',
+              '**"Invalid Public Action"** — you forgot to set the **Family** entity to **Public = Yes**. Go to Data > Entities > Family > Properties > Public = Yes',
               '**"Database Upgrade Error"** — you may have changed the primary key or deleted/recreated the entity. Delete the entity, publish (drops the table), recreate it, publish again',
               '**"Type mismatch"** — check that your Server Action inputs/outputs match the entity attribute types exactly',
             ],
@@ -1221,6 +1231,14 @@ export const buildPhases: readonly BuildPhase[] = [
             ],
           },
           {
+            title: 'Set Entity and Server Actions to Public',
+            instructions: [
+              '**Data** tab > **Entities** > click **Caregiver** > set **Public** = **Yes**',
+              '**Logic** tab > **Server Actions** > set **Public** = **Yes** on ALL Server Actions (**SA_CreateCaregiver**, **SA_GetCaregiverByUserId**, **SA_GetCaregiverById**, **SA_UpdateCaregiver**, **SA_ListCaregiversBySkills**, **SA_UpdateCaregiverRating**, **SA_UpdateLastAssigned**)',
+            ],
+            important: 'Both the Entity AND the Server Actions must be Public. If either is missing, you get "Invalid Public Action" errors on publish.',
+          },
+          {
             title: 'Publish the Caregiver service',
             instructions: [
               'Press **Ctrl+Shift+P** to publish the **CareConnect_Caregiver** module',
@@ -1574,6 +1592,14 @@ export const buildPhases: readonly BuildPhase[] = [
               'Add Output Parameter: **Success** — Data Type: **Boolean**',
               'Flow: **Start** → **SA_DeleteSlot** → **Assign** output → **End**',
             ],
+          },
+          {
+            title: 'Set Entity and Server Actions to Public',
+            instructions: [
+              '**Data** tab > **Entities** > click **AvailabilitySlot** > set **Public** = **Yes**',
+              '**Logic** tab > **Server Actions** > set **Public** = **Yes** on ALL Server Actions (**SA_CreateSlot**, **SA_ListAvailableSlots**, **SA_BookSlot**, **SA_UnbookSlot**, **SA_DeleteSlot**)',
+            ],
+            important: 'Both the Entity AND the Server Actions must be Public. If either is missing, you get "Invalid Public Action" errors on publish.',
           },
           {
             title: 'Publish the AvailabilitySlot service',
@@ -2060,6 +2086,14 @@ export const buildPhases: readonly BuildPhase[] = [
               'Add Output Parameter: **Success** — Data Type: **Boolean**',
               'Flow: **Start** → **SA_CancelCareRequest** → **Assign** output → **End**',
             ],
+          },
+          {
+            title: 'Set Entity and Server Actions to Public',
+            instructions: [
+              '**Data** tab > **Entities** > click **CareRequest** > set **Public** = **Yes**',
+              '**Logic** tab > **Server Actions** > set **Public** = **Yes** on ALL Server Actions (**SA_CreateCareRequest**, **SA_GetCareRequestById**, **SA_ListCareRequestsByFamily**, **SA_ListCareRequestsByStatus**, **SA_UpdateCareRequestStatus**, **SA_AssignCaregiverToRequest**, **SA_IncrementAssignmentAttempts**, **SA_CancelCareRequest**)',
+            ],
+            important: 'Both the Entity AND the Server Actions must be Public. If either is missing, you get "Invalid Public Action" errors on publish.',
           },
           {
             title: 'Publish the CareRequest service',
@@ -2699,6 +2733,16 @@ export const buildPhases: readonly BuildPhase[] = [
               'Add Output Parameter: **Success** — Data Type: **Boolean**',
               'Flow: **Start** → **SA_RefundPayment** (**VisitId**, **Request.RefundReason**) → **Assign** output → **End**',
             ],
+          },
+          {
+            title: 'Set Entities and Server Actions to Public',
+            instructions: [
+              'This module has TWO entities — both must be Public:',
+              '**Data** tab > **Entities** > click **CareVisit** > set **Public** = **Yes**',
+              '**Data** tab > **Entities** > click **Payment** > set **Public** = **Yes**',
+              '**Logic** tab > **Server Actions** > set **Public** = **Yes** on ALL Server Actions (all 8 CareVisit actions + all 4 Payment actions)',
+            ],
+            important: 'Both entities AND all Server Actions must be Public. If either is missing, you get "Invalid Public Action" errors on publish.',
           },
           {
             title: 'Publish the CareVisit + Payment service',
