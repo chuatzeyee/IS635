@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { definitions } from '../data/definitions'
 
@@ -16,7 +17,13 @@ function highlightText(text: string, query: string): React.ReactNode {
 }
 
 export default function Definitions() {
-  const [query, setQuery] = useState('')
+  const [searchParams] = useSearchParams()
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
+
+  useEffect(() => {
+    const q = searchParams.get('q')
+    if (q) setQuery(q)
+  }, [searchParams])
 
   const filtered = useMemo(() => {
     const lower = query.toLowerCase().trim()
