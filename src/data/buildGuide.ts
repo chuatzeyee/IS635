@@ -1769,6 +1769,7 @@ export const buildPhases: readonly BuildPhase[] = [
               '**Result.Notes** = **Notes**',
               '**Result.SupportingDocS3Key** = **SupportingDocS3Key**',
               '**Result.NotifiedCaregiverIds** = **NotifiedCaregiverIds**',
+              '**Result.AssignedCaregiverId** = **0** (no caregiver assigned yet — this gets set later via SA_AssignCaregiverToRequest)',
               '**Result.Status** = **Entities.CareRequestStatus.Open**',
               '**Result.AssignmentAttempts** = **0**',
               '**Result.CreatedAt** = **CurrDateTime()**',
