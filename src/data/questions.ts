@@ -2692,4 +2692,397 @@ export const questions: readonly Question[] = [
     ],
     correctIndex: 2,
   },
+
+  // ── Session 6: Processes Layer ──────────────────────────────
+
+  {
+    id: 226,
+    session: 6,
+    question:
+      "What is the key difference between Processes and Timers in OutSystems?",
+    options: [
+      "Processes run on a schedule; Timers respond to events",
+      "Processes handle multi-step workflows with human interaction; Timers handle scheduled batch jobs",
+      "Timers support more concurrent threads than Processes",
+      "There is no difference — they are interchangeable",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 227,
+    session: 6,
+    question:
+      "How many concurrent threads do Processes support in OutSystems?",
+    options: [
+      "3",
+      "10",
+      "20",
+      "Unlimited",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 228,
+    session: 6,
+    question:
+      "How many concurrent threads do Timers support in OutSystems?",
+    options: [
+      "1",
+      "3",
+      "10",
+      "20",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 229,
+    session: 6,
+    question:
+      "Which Process flow element executes server-side logic without human intervention?",
+    options: [
+      "Human Activity",
+      "Decision",
+      "Automatic Activity",
+      "Wait",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 230,
+    session: 6,
+    question:
+      "Which Process flow element pauses the process and waits for a user to complete a task?",
+    options: [
+      "Automatic Activity",
+      "Human Activity",
+      "Wait",
+      "Conditional Start",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 231,
+    session: 6,
+    question:
+      "What does the Wait element do in a Process flow?",
+    options: [
+      "Terminates the process",
+      "Launches a sub-process",
+      "Pauses the process until a timeout or database event occurs",
+      "Executes a server action automatically",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 232,
+    session: 6,
+    question:
+      "What does the Execute Process element do?",
+    options: [
+      "Ends the current process",
+      "Launches a sub-process (child process) from within the current process",
+      "Starts a Timer",
+      "Branches the flow conditionally",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 233,
+    session: 6,
+    question:
+      "What is a Conditional Start in a Process flow?",
+    options: [
+      "A decision element that branches the flow",
+      "An alternative entry point triggered by a database event instead of an explicit launch",
+      "A Start element with a boolean condition",
+      "A Timer that starts based on a condition",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 234,
+    session: 6,
+    question:
+      "In the Sequential Activities pattern, how do activities execute?",
+    options: [
+      "All at the same time",
+      "One after another in a linear chain",
+      "Based on conditional branching",
+      "In random order determined by the Scheduler Service",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 235,
+    session: 6,
+    question:
+      "How do you synchronize (join) parallel activities back into a single path in OutSystems?",
+    options: [
+      "Use a Decision element",
+      "Use a Wait element with a timeout",
+      "Wrap parallel activities in a sub-process using Execute Process",
+      "Add a Conditional Start to each parallel path",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 236,
+    session: 6,
+    question:
+      "Is OutSystems BPMN compliant?",
+    options: [
+      "Yes, fully compliant",
+      "Yes, partially compliant",
+      "No, but it provides a mapping table for BPMN practitioners",
+      "No, and there is no mapping available",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 237,
+    session: 6,
+    question:
+      "Which of these BPM tools is also NOT BPMN compliant?",
+    options: [
+      "Camunda",
+      "Pega",
+      "Bizagi",
+      "Bonita",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 238,
+    session: 6,
+    question:
+      "Which tool is an example of a BPMN-compliant BPM tool?",
+    options: [
+      "OutSystems",
+      "Pega",
+      "Camunda",
+      "Salesforce",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 239,
+    session: 6,
+    question:
+      "In the auto-grader example, why is a Process used instead of a synchronous call?",
+    options: [
+      "Processes are faster than synchronous calls",
+      "Synchronous grading would cause a frontend timeout due to long execution time",
+      "Processes can access the database but Server Actions cannot",
+      "Timers cannot be used for grading",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 240,
+    session: 6,
+    question:
+      "In the auto-grader Process, what is the only process element used?",
+    options: [
+      "Human Activity",
+      "Decision",
+      "Automatic Activity",
+      "Wait",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 241,
+    session: 6,
+    question:
+      "What does the auto-grader frontend do after launching the Process?",
+    options: [
+      "Waits for the Process to finish before showing any UI",
+      "Checks progress every 500ms and displays it on a progress bar",
+      "Redirects to a different screen",
+      "Sends an email when grading is complete",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 242,
+    session: 6,
+    question:
+      "Which OutSystems service manages Timer execution?",
+    options: [
+      "Process Engine",
+      "Deployment Controller",
+      "Scheduler Service",
+      "Timer Manager",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 243,
+    session: 6,
+    question:
+      "In the Timer Lab's RabbitMQ architecture, what role does the Exchange play?",
+    options: [
+      "It consumes messages from the Queue",
+      "It receives messages from Publishers and routes them to bound Queues",
+      "It stores messages permanently",
+      "It sends emails directly to recipients",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 244,
+    session: 6,
+    question:
+      "In the Timer Lab, what does the Subscriber Timer do after consuming a message from the Queue?",
+    options: [
+      "Publishes it to another Exchange",
+      "Sends the email and logs the event in a database",
+      "Deletes the Queue",
+      "Starts a new Process",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 245,
+    session: 6,
+    question:
+      "Where is a Timer created in OutSystems Service Studio?",
+    options: [
+      "Data > Entities",
+      "Interface > Screens",
+      "Logic > Timers",
+      "Processes > Timers",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 246,
+    session: 6,
+    question:
+      "What are Site Properties used for in the Timer Lab?",
+    options: [
+      "Storing user session data",
+      "Configuring RabbitMQ connection details (Exchange, Queue, Host, Username, Password)",
+      "Defining screen layouts",
+      "Setting up database indexes",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 247,
+    session: 6,
+    question:
+      "What does 'multi-tenant' mean for the Party atomic service?",
+    options: [
+      "Each tenant has a separate database",
+      "Data is co-mingled in the same table, segregated by a unique Tenant ID",
+      "Only one tenant can use the service at a time",
+      "Tenants share the same data without segregation",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 248,
+    session: 6,
+    question:
+      "What header is used for authentication when calling the Party service API?",
+    options: [
+      "Authorization: Bearer",
+      "X-API-Key",
+      "X-Contacts-Key",
+      "Content-Type",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 249,
+    session: 6,
+    question:
+      "What identifier is returned when creating a Person in the Party service?",
+    options: [
+      "UserId",
+      "PersonId",
+      "PartyId",
+      "TenantId",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 250,
+    session: 6,
+    question:
+      "What file format is used to backup OutSystems projects?",
+    options: [
+      "ZIP",
+      "OAP (OutSystems Application Pack)",
+      "WAR",
+      "JSON",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 251,
+    session: 6,
+    question:
+      "Why should you download an OAP file after each coding session?",
+    options: [
+      "To share code with teammates",
+      "To deploy to production",
+      "Personal environments may be cleaned up after weeks of inactivity",
+      "OAP files are required for 1-Click Publish",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 252,
+    session: 6,
+    question:
+      "How do you restore an OutSystems project from an OAP file?",
+    options: [
+      "Import via Service Center",
+      "From the home page: Environment > Open Files, select OAP, then install",
+      "Upload to Forge and install from there",
+      "Use the Debugger to load the OAP",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 253,
+    session: 6,
+    question:
+      "Which process design pattern is used for SLA enforcement or sending reminders?",
+    options: [
+      "Sequential Activities",
+      "Parallel Activities",
+      "Wait with Timeout",
+      "Conditional Start",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 254,
+    session: 6,
+    question:
+      "What triggers a Wait with Database Event to resume?",
+    options: [
+      "A Timer fires",
+      "A specific record is created or updated in the database",
+      "A user clicks a button",
+      "The Scheduler Service restarts",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 255,
+    session: 6,
+    question:
+      "In the Pub-Sub pattern, what is the Publisher responsible for?",
+    options: [
+      "Consuming messages from the Queue",
+      "Sending messages to the Exchange",
+      "Binding the Queue to the Exchange",
+      "Logging events in the database",
+    ],
+    correctIndex: 1,
+  },
 ]

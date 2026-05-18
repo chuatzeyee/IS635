@@ -8,10 +8,10 @@ A dark-themed, interactive study companion for **SMU IS635 — Low Code Applicat
 
 | Section | Count | Description |
 |---------|-------|-------------|
-| **Topics** | 55 topics across 5 sessions | Key concepts with expandable sections and session-colored borders |
-| **Definitions** | 53 terms | Searchable glossary with highlighted matches |
-| **Guides** | 18 guides | Step-by-step how-to walkthroughs for common OutSystems tasks |
-| **Practice** | 225 questions | Multiple-choice quiz with progress bar, accuracy tracking, and streak counter |
+| **Topics** | 63 topics across 6 sessions | Key concepts with expandable sections and session-colored borders |
+| **Definitions** | 68 terms | Searchable glossary with highlighted matches |
+| **Guides** | 21 guides | Step-by-step how-to walkthroughs for common OutSystems tasks |
+| **Practice** | 255 questions | Multiple-choice quiz with progress bar, accuracy tracking, and streak counter |
 | **Build Guide** | 8 phases, 40+ sections | Comprehensive CareConnect backend build reference for OutSystems novices (includes OpenAI wrapper, consumer guide, and Product & Party UI integration) |
 
 ## Sessions Covered
@@ -21,6 +21,7 @@ A dark-themed, interactive study companion for **SMU IS635 — Low Code Applicat
 3. Data Layer
 4. Logic Layer
 5. Interface Layer
+6. Processes Layer
 
 ## Tech Stack
 

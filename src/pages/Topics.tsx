@@ -148,6 +148,7 @@ export default function Topics() {
     'bg-s3/10 text-s3 border-s3/25',
     'bg-s4/10 text-s4 border-s4/25',
     'bg-s5/10 text-s5 border-s5/25',
+    'bg-s6/10 text-s6 border-s6/25',
   ]
 
   const sessionColorsInactive = [
@@ -156,6 +157,7 @@ export default function Topics() {
     'hover:text-s3',
     'hover:text-s4',
     'hover:text-s5',
+    'hover:text-s6',
   ]
 
   return (
