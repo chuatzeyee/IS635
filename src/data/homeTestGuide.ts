@@ -573,28 +573,68 @@ export const homeTestPhases: readonly HTPhase[] = [
       {
         id: '5.1',
         title: 'Build & populate the Home screen',
-        summary: 'Make it Anonymous (no login), load+compute on open, show the 7-column table.',
+        summary: 'Open the Home screen, make it Anonymous, run Sync+Compute on open, then bind a table to the summary entity. Built node-by-node.',
         steps: [
           {
-            title: 'Create the screen and load data',
+            title: 'Step 1 — Open the Home screen',
             instructions: [
-              '**Interface** → in MainFlow open the default **Home** screen (or add one named Home)',
-              'Set the screen **Roles/Anonymous** = Anonymous so no login is required',
-              'Add a server **Data Action** on the screen, e.g. **LoadAndComputeSummary**, that runs on load and does: **SyncHomesAndSales** → **CreateHomeSalesSummary**',
-              'Add a screen **Aggregate GetLocalHomeSalesSummary** → Source LocalHomeSalesSummary (this feeds the table)',
-              'Ensure the aggregate refreshes AFTER the data action completes (call Refresh on it in the data action\'s success, or order them so compute runs first)',
+              'Click the **Interface** tab (top bar).',
+              'In the left tree expand **UI Flows → MainFlow**. There is already a **Home** screen (created with the app). Double-click **Home** to open it on the canvas.',
+              'If there is no Home screen, right-click **MainFlow → Add Screen → Empty**, name it **Home**.',
             ],
-            important:
-              'The simplest race-free pattern: one Data Action that syncs, computes, THEN returns the LocalHomeSalesSummary list — bind the table directly to that action\'s output. Guarantees the table shows freshly computed data.',
           },
           {
-            title: 'Add the table',
+            title: 'Step 2 — Make the screen Anonymous (no login)',
             instructions: [
-              'Drag a **Table** widget onto the screen → Source = the summary list/aggregate',
-              'Columns in order: **Year, Month, Top Agent, Top Agent Homes Sold, Top Agent Commission, Top Selling Home Type, Total Agency Commission**',
-              'For Top Selling Home Type, show the composed string (Bedrooms + " Bedroom " + PropertyType) — either store it composed in the entity or compose it in the column expression',
+              'With the Home screen open, click an empty part of the canvas to select the SCREEN itself (the tree shows "Home" highlighted).',
+              'In **Properties** (right) find the **Roles** (a.k.a. Accessible / Anonymous) property.',
+              'Set it so **Anonymous** is allowed — in O11 Reactive: open the screen’s **Roles** property and tick **(Anonymous)**, or remove "Registered" so it is public.',
+              'WHY: the grader’s checks and your screenshot must load the page WITHOUT a login prompt.',
             ],
-            tip: 'Match the mockup column order for an easy visual self-check before submitting.',
+            important:
+              'If you skip this, opening the app shows the Login screen first and the auto-load never runs → table is empty and you cannot screenshot it.',
+          },
+          {
+            title: 'Step 3 — Create the screen Aggregate that feeds the table',
+            instructions: [
+              'In the tree, right-click the **Home** screen → **Fetch Data from Database** (this adds an Aggregate to the screen).',
+              'In the Aggregate editor, drag the **LocalHomeSalesSummary** entity in as the Source. Close the editor.',
+              'It is auto-named **GetLocalHomeSalesSummaries** (or similar). Its rows are read as **GetLocalHomeSalesSummaries.List**.',
+              'This Aggregate runs automatically when the screen loads — but it must run AFTER Sync+Compute, which Step 4 arranges.',
+            ],
+          },
+          {
+            title: 'Step 4 — Run Sync + Compute when the screen opens',
+            instructions: [
+              'You need SyncHomesAndSales then CreateHomeSalesSummary to run BEFORE the table renders. Wire them to the screen’s load event.',
+              'In the tree under the **Home** screen, find the **OnInitialize** client action (if absent: right-click Home → **Add Event Handler → OnInitialize**, or right-click → Add Client Action and name it Preparation/OnInitialize). Double-click to open its flow.',
+              'Drag a **Run Server Action** onto the line → pick **SyncHomesAndSales** (pulls the API into LocalHome/LocalHomeSales).',
+              'Drag another **Run Server Action** after it → pick **CreateHomeSalesSummary** (builds LocalHomeSalesSummary).',
+              'Drag a **Refresh Data** element after those → select **GetLocalHomeSalesSummaries** (the Step 3 aggregate). This re-queries the summary AFTER compute so the table shows fresh rows.',
+              'Connect to **End**. Flow: **Start → Run SyncHomesAndSales → Run CreateHomeSalesSummary → Refresh Data(GetLocalHomeSalesSummaries) → End**.',
+            ],
+            important:
+              'ORDER MATTERS: Sync → Compute → Refresh. Without the Refresh Data at the end, the aggregate may have queried the (empty) summary before compute ran, leaving the table blank on first load.',
+          },
+          {
+            title: 'Step 5 — Add the table and its 7 columns',
+            instructions: [
+              'From the **Toolbox** drag a **Table** widget onto the screen body (below the title).',
+              'A "Source" prompt appears → set Source = **GetLocalHomeSalesSummaries.List** (the Step 3 aggregate).',
+              'It auto-creates a column per attribute. Keep/arrange these 7 columns in order: **Year, Month, TopAgent, TopAgentHomesSold, TopAgentCommission, TopSellingHomeType, TotalAgencyCommission**.',
+              'Delete any extra columns (e.g. Id) you do not want shown.',
+              'If you stored TopSellingHomeType as a composed Text in Phase 4 (e.g. "2 Bedroom Condo"), just bind the column to that attribute — no extra work.',
+            ],
+            tip: 'Match the mockup’s column order (Year | Month | Top Agent | Homes Sold | Top Agent Commission | Top Selling Home Type | Total Agency Commission) for a fast visual self-check before you submit.',
+          },
+          {
+            title: 'Step 6 — Publish and confirm the table populates',
+            instructions: [
+              'Press **Ctrl+S**, then **1-Click Publish**.',
+              'Click **Open in Browser**. The page should load WITHOUT a login, run Sync+Compute, and show the summary table filled with one row per month.',
+              'If the table is empty: check Step 4 order (Sync→Compute→Refresh) and that the aggregate Source is LocalHomeSalesSummary.',
+              'If you see a login page: revisit Step 2 (Anonymous).',
+            ],
           },
         ],
       },
