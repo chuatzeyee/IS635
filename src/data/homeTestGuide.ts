@@ -342,7 +342,8 @@ export const homeTestPhases: readonly HTPhase[] = [
             title: 'Step D — Clear LocalHome, then add the For Each',
             instructions: [
               'FIRST clear old rows so re-running does not pile up duplicates (you only have CreateLocalHome, not CreateOrUpdate — so you must start clean).',
-              'From the **Toolbox** drag a **SQL** element onto the line after GetHomes. Double-click it → in the SQL text type: **DELETE FROM {LocalHome}** → close. (No output, no parameters needed.) This empties the table each run.',
+              'From the **Toolbox** drag a **SQL** element onto the line after GetHomes. Double-click it → in the SQL text type: **DELETE FROM {LocalHome}**.',
+              'IMPORTANT: OutSystems requires EVERY SQL element to have an **Output** structure set — even a DELETE that returns nothing. In the editor click **Output → Select Structure** and pick **LocalHome** (any entity/structure works; the result list just stays empty). Without this you get "Output structure must be set". No parameters are needed. Click Done.',
               'Now from the **Toolbox** drag a **For Each** onto the line after the SQL element.',
               'Click the For Each → in **Properties** click the **List** value box → expression editor → type **GetHomes.Response** → Done.',
               'The loop now runs once per home returned by the API.',
@@ -367,7 +368,7 @@ export const homeTestPhases: readonly HTPhase[] = [
             title: 'Step F — Repeat for Home Sales, then close the flow',
             instructions: [
               'After the Homes For Each, drag another **Run Server Action** onto the MAIN line → pick **GetHomeSales** (→ checkpoint 2). Node auto-named **GetHomeSales**.',
-              'Drag a **SQL** element after it → text: **DELETE FROM {LocalHomeSales}** → close.',
+              'Drag a **SQL** element after it → text: **DELETE FROM {LocalHomeSales}**. Set its **Output → Select Structure = LocalHomeSales** (required even for DELETE — see the LocalHome note above). No parameters. Done.',
               'Drag a second **For Each** after the SQL → set its **List** = **GetHomeSales.Response** (same idea: GetHomeSales.Response is the list of sales; dot in to confirm it shows HomeId, AgentName, Year, Month).',
               'Into THAT loop body (Cycle branch) drag **CreateLocalHomeSales** (from Data → Entities → LocalHomeSales) → set **Source** = **GetHomeSales.Response.Current**.',
               'Connect the last node to **End**.',
@@ -459,7 +460,8 @@ export const homeTestPhases: readonly HTPhase[] = [
             title: 'Step A — Create the action + clear old summary rows',
             instructions: [
               '**Logic** tab → right-click **Server Actions** → **Add Server Action** → name **CreateHomeSalesSummary**.',
-              'From the **Toolbox** drag a **SQL** element onto the line after Start → double-click → type **DELETE FROM {LocalHomeSalesSummary}** → Done. (No output, no parameters.) This empties the summary table so each run starts clean — the key to a correct record count (checkpoint 4) when you only have a Create action.',
+              'From the **Toolbox** drag a **SQL** element onto the line after Start → double-click → type **DELETE FROM {LocalHomeSalesSummary}**. Set its **Output → Select Structure = LocalHomeSalesSummary** (OutSystems requires an Output on EVERY SQL element, even a DELETE — otherwise "Output structure must be set"). No parameters. Done.',
+              'This empties the summary table so each run starts clean — the key to a correct record count (checkpoint 4) when you only have a Create action.',
             ],
             important:
               'Like the sync action, we clear-then-recreate instead of Create-or-Update, because your environment only auto-generated CreateLocalHomeSalesSummary (no Update). DELETE first = no duplicates, no stale rows.',
