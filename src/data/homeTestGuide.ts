@@ -412,7 +412,7 @@ export const homeTestPhases: readonly HTPhase[] = [
               '**TopAgentCommission** = TopAgent row **TotalSales × 0.018**',
               '**TopSellingHomeType** = TopSellingHomeType row Bedrooms + " Bedroom " + PropertyType',
               '**TotalAgencyCommission** = TotalAgencySales row **TotalAgencySales × 0.002**',
-              '(Each SQL is TOP 1, so read its first row, e.g. TopAgentSQL.List.Current after a 1-row result, or index [1]/.Current depending on how you reference it.)',
+              '(Each SQL is TOP 1 — one row. Read it as **TopAgentSQL.List[0]** — OutSystems lists are **0-indexed**, so [0] is the first/only row. (Do NOT use [1] — that is the second row and does not exist, giving null → 0 commission.) **.Current** also works immediately after running the SQL or inside a For Each. Example: TopAgentCommission = TopAgentSQL.List[0].TotalSales × 0.018.)',
             ],
             important:
               'Commission math is checkpoints 7 and 9: Agent = TotalSales × 0.018, Agency = TotalAgencySales × 0.002. Home type string must read like "2 Bedroom Condo" — use Bedrooms + " Bedroom " + PropertyType (mind the spaces).',
