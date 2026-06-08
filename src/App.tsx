@@ -7,6 +7,7 @@ import Definitions from './pages/Definitions'
 import Guides from './pages/Guides'
 import Practice from './pages/Practice'
 import Build from './pages/Build'
+import Playbook from './pages/Playbook'
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/guides" element={<Guides />} />
           <Route path="/practice" element={<Practice />} />
           <Route path="/build" element={<Build />} />
+          <Route path="/playbook" element={<Playbook />} />
         </Routes>
       </main>
       <NavPill />
