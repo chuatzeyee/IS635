@@ -641,19 +641,79 @@ export const homeTestPhases: readonly HTPhase[] = [
       {
         id: '5.2',
         title: 'Submit Sales Summary button → POST',
-        summary: 'Invoke the HomeSalesSummary API with your computed summary list (checkpoint 3).',
+        summary: 'Build a SubmitSummary server action that reads LocalHomeSalesSummary, fills the API request list, and calls the HomeSalesSummary POST. Then wire a button to run it. Node-by-node.',
         steps: [
           {
-            title: 'Wire the button',
+            title: 'Step 1 — Check the POST method’s input shape',
             instructions: [
-              'Drag a **Button** onto the screen → label **Submit Sales Summary**',
-              'On Click → New Client Action **SubmitSalesSummaryOnClick**',
-              'Inside: **Run Server Action** → a wrapper **SubmitSummary** server action that builds the request from LocalHomeSalesSummary and calls the consumed **HomeSalesSummary** (POST) method',
-              'In SubmitSummary: Aggregate LocalHomeSalesSummary → For Each → ListAppend into the HomeSalesSummary request body list (mapping each field to the API HomeSalesSummaryData attribute names) → Run Server Action HomeSalesSummary(request)',
-              'Back on the client: show a **Message** (Success) "Summary submitted"',
+              'In the tree expand **Integrations → REST → IS467LabTest_HomeSales → HomeSalesSummary** → **Input Parameters**.',
+              'There is one input (the request body). Note its NAME and TYPE — it is a "List of HomeSalesSummaryData" (or the API’s equivalent). Expand the HomeSalesSummaryData structure and note its attribute names (e.g. Year, Month, TopAgent, TopAgentHomesSold, TopAgentCommission, TopSellingHomeType, TotalAgencyCommission).',
+              'You will fill ONE HomeSalesSummaryData per summary row and pass the whole list to this input.',
             ],
             important:
-              'The POST body field names must match the API HomeSalesSummaryData structure exactly (that is why you copied them in Phase 2). A mismatch = the API accepts the call but stores wrong/empty fields = checkpoints 4–9 fail even though checkpoint 3 (invocation) passes.',
+              'The HomeSalesSummaryData attribute names are what the grader reads (checkpoints 4–9). Map each one exactly — a typo means the call succeeds (chk 3 passes) but the values are wrong/empty (chk 4–9 fail).',
+          },
+          {
+            title: 'Step 2 — Create the SubmitSummary server action',
+            instructions: [
+              '**Logic** tab → right-click **Server Actions** → **Add Server Action** → name **SubmitSummary**. Blank Start→End canvas appears.',
+              'Add a **Local Variable** to hold the request list: in the action’s tree node, right-click → **Add Local Variable** → name **RequestList** → Data Type = **List** of **HomeSalesSummaryData** (the API structure from Step 1). This is the body you will build then send.',
+            ],
+          },
+          {
+            title: 'Step 3 — Read the computed summary rows',
+            instructions: [
+              'Drag an **Aggregate** onto the line after Start → drag **LocalHomeSalesSummary** in as Source → close. Auto-named **GetLocalHomeSalesSummaries**; rows = **GetLocalHomeSalesSummaries.List**.',
+              '(These are the per-month rows you created in Phase 4.)',
+            ],
+          },
+          {
+            title: 'Step 4 — Loop the rows and build the request list',
+            instructions: [
+              'Drag a **For Each** after the aggregate → set **List** = **GetLocalHomeSalesSummaries.List**.',
+              'Inside the loop (Cycle branch), drag a **Run Server Action** → pick the built-in **ListAppend**.',
+              'Set ListAppend **List** = **RequestList** (your local variable).',
+              'Set ListAppend **Element** = a new HomeSalesSummaryData built from the current row. Click the Element value → in the expression editor build the record, mapping each API attribute to the current summary row:',
+              '**Year** = `GetLocalHomeSalesSummaries.List.Current.LocalHomeSalesSummary.Year`',
+              '**Month** = `...Current.LocalHomeSalesSummary.Month`',
+              '**TopAgent** = `...Current.LocalHomeSalesSummary.TopAgent`',
+              '**TopAgentHomesSold** = `...Current.LocalHomeSalesSummary.TopAgentHomesSold`',
+              '**TopAgentCommission** = `...Current.LocalHomeSalesSummary.TopAgentCommission`',
+              '**TopSellingHomeType** = `...Current.LocalHomeSalesSummary.TopSellingHomeType`',
+              '**TotalAgencyCommission** = `...Current.LocalHomeSalesSummary.TotalAgencyCommission`',
+              '(If the editor will not let you build a record inline, instead: before ListAppend add an **Assign** that sets each attribute of a scratch HomeSalesSummaryData local var, then ListAppend that var.)',
+            ],
+            tip: 'Tip to avoid typing the long path: after the For Each is set, the current row autocompletes from GetLocalHomeSalesSummaries.List.Current — drill into .LocalHomeSalesSummary then the attribute.',
+          },
+          {
+            title: 'Step 5 — Call the POST API',
+            instructions: [
+              'After the For Each (back on the MAIN line, not the loop branch), drag a **Run Server Action** → pick the consumed **HomeSalesSummary** method.',
+              'Set its input (the request body parameter from Step 1) = **RequestList**.',
+              'Connect to **End**. This is the actual POST → checkpoint 3.',
+              'Flow: **Start → GetLocalHomeSalesSummaries(Aggregate) → For Each{ ListAppend → RequestList } → Run HomeSalesSummary(RequestList) → End**.',
+            ],
+            important:
+              'The header (X-Contacts-Key) is added automatically by OnBeforeRequest, so you do NOT set it here. If you get 401/403 on submit, the OnBeforeRequest header (Phase 1.5) is wrong.',
+          },
+          {
+            title: 'Step 6 — Add the button and wire it',
+            instructions: [
+              'Go to the **Home** screen (Interface tab). From the **Toolbox** drag a **Button** onto the screen (top-right, like the mockup). Set its label to **Submit Sales Summary**.',
+              'With the button selected, find its **On Click** event in Properties → choose **New Client Action** (opens SubmitSalesSummaryOnClick).',
+              'Inside that client action: drag a **Run Server Action** → pick **SubmitSummary** (your Step 2 action).',
+              'After it, drag a **Message** element → Type = **Success**, Message = "Summary submitted". Connect to End.',
+              '**Ctrl+S → 1-Click Publish.**',
+            ],
+          },
+          {
+            title: 'Step 7 — Test the button',
+            instructions: [
+              'Open the app in the browser, let the table load, then click **Submit Sales Summary**.',
+              'You should see the green "Summary submitted" message and no error.',
+              'If you get an error: open **Service Center → Monitoring → Errors** to read the real cause (usually a request attribute name mismatch with HomeSalesSummaryData, or the OnBeforeRequest header).',
+              'Submitting is checkpoint 3; whether the VALUES are right is checkpoints 4–9, verified next in Phase 6.',
+            ],
           },
         ],
       },
