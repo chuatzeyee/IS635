@@ -3085,4 +3085,296 @@ export const questions: readonly Question[] = [
     ],
     correctIndex: 1,
   },
+
+  // ── Session 6: Processes Layer (additional) ──────────────────
+
+  {
+    id: 256,
+    session: 6,
+    question:
+      "Which of these is NOT a valid use case for a Process (rather than a Timer)?",
+    options: [
+      "An approval workflow requiring a manager to approve or reject",
+      "Order fulfillment with multiple conditional steps",
+      "Sending a daily batch of summary emails at 2am",
+      "Customer onboarding with human and automatic steps",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 257,
+    session: 6,
+    question:
+      "Which Process flow element would you use to branch the flow based on a loan-approval rule?",
+    options: [
+      "Wait",
+      "Decision",
+      "Automatic Activity",
+      "End",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 258,
+    session: 6,
+    question:
+      "In the parallel-activities synchronization pattern, when does the parent process resume?",
+    options: [
+      "As soon as the first parallel activity finishes",
+      "Only when ALL parallel activities in the sub-process finish",
+      "After a fixed timeout regardless of completion",
+      "When the user manually resumes it",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 259,
+    session: 6,
+    question:
+      "A Timer's logic is contained in which type of element?",
+    options: [
+      "A Client Action",
+      "A Screen Action",
+      "A Server Action",
+      "A Human Activity",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 260,
+    session: 6,
+    question:
+      "What is the primary benefit of running the auto-grader as a Process?",
+    options: [
+      "It grades faster than a synchronous call",
+      "It runs asynchronously so the frontend is not blocked during long execution",
+      "It avoids using the database",
+      "It guarantees the grade is always correct",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 261,
+    session: 6,
+    question:
+      "In a multi-tenant Party service, how is one tenant's data kept separate from another's?",
+    options: [
+      "Each tenant has a completely separate database server",
+      "Data is co-mingled in the same tables and segregated by a unique Tenant ID",
+      "Tenants take turns accessing the service one at a time",
+      "Data is encrypted with a different algorithm per tenant",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 262,
+    session: 6,
+    question:
+      "Which RabbitMQ component does a Subscriber bind its Queue to in order to receive messages?",
+    options: [
+      "Another Queue",
+      "The Exchange",
+      "The Publisher directly",
+      "The Scheduler Service",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 263,
+    session: 6,
+    question:
+      "Why might a Timer use a polling pattern against a RabbitMQ Queue?",
+    options: [
+      "To publish new messages to the Exchange",
+      "To periodically check the Queue for new messages to consume",
+      "To delete old messages automatically",
+      "To create new Queues on demand",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 264,
+    session: 6,
+    question:
+      "How many concurrent threads do Timers support compared to Processes?",
+    options: [
+      "Timers: 20, Processes: 3",
+      "Timers: 3, Processes: 20",
+      "Both support 10",
+      "Both are unlimited",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 265,
+    session: 6,
+    question:
+      "What is the recommended best practice to protect your work in a free OutSystems personal environment?",
+    options: [
+      "Commit your code to GitHub after each session",
+      "Download an OAP file after each coding session",
+      "Email yourself a screenshot of your work",
+      "Keep the browser tab open at all times",
+    ],
+    correctIndex: 1,
+  },
+
+  // ── Session 8: Exploring Forge ──────────────────────────────
+
+  {
+    id: 266,
+    session: 8,
+    question:
+      "What is Forge in the OutSystems ecosystem?",
+    options: [
+      "A database engine",
+      "A marketplace of reusable components, plugins, and connectors",
+      "A deployment pipeline tool",
+      "A version control system",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 267,
+    session: 8,
+    question:
+      "Which of these is NOT a Forge component?",
+    options: [
+      "Google Maps connector",
+      "Stripe payments",
+      "Microsoft Teams",
+      "Speech Recognition plugin",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 268,
+    session: 8,
+    question:
+      "What does installing a Forge component add to your application?",
+    options: [
+      "A new database table only",
+      "A dependency module you can consume in your own apps",
+      "A separate environment",
+      "A new user account",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 269,
+    session: 8,
+    question:
+      "Which Trust / support level indicates the most reliable Forge component?",
+    options: [
+      "Not Supported",
+      "Trial",
+      "Supported",
+      "Experimental",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 270,
+    session: 8,
+    question:
+      "In Lab 7, how many Forge components does a typical team explore?",
+    options: [
+      "Exactly 1 for the whole team",
+      "5 or 6 — one per team member",
+      "At least 20",
+      "One per week of the term",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 271,
+    session: 8,
+    question:
+      "What often ships alongside a Forge component to show how to use it?",
+    options: [
+      "A YouTube channel",
+      "A Demo app",
+      "A printed manual",
+      "A certification exam",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 272,
+    session: 8,
+    question:
+      "In the Lab 7 writeup, which section is the most valuable for your team project?",
+    options: [
+      "The component's icon",
+      "The number of downloads",
+      "How it could be used in your term project",
+      "The author's name",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 273,
+    session: 8,
+    question:
+      "When evaluating a Forge component, which factor signals active maintenance?",
+    options: [
+      "The length of its description",
+      "A recent last-updated date and high download count",
+      "The number of colors in its icon",
+      "Whether it has a one-word name",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 274,
+    session: 8,
+    question:
+      "What should you check before consuming a Forge component in your stack?",
+    options: [
+      "That it is written in Python",
+      "Compatibility with your environment (O11 vs ODC) and platform (Reactive Web vs Mobile)",
+      "That it has exactly 5 stars",
+      "That it was published this week",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 275,
+    session: 8,
+    question:
+      "Why is choosing a 'Not Supported' Forge component risky for a term project?",
+    options: [
+      "It costs money to install",
+      "It can become technical debt — it may be abandoned or stop working",
+      "It cannot be installed at all",
+      "It deletes your other modules",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 276,
+    session: 8,
+    question:
+      "After installing a Forge component, where do you explore its public Actions and Web Blocks?",
+    options: [
+      "In the browser developer tools",
+      "In Service Studio, by opening the installed module",
+      "In the Forge marketplace listing",
+      "In the OutSystems forum",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 277,
+    session: 8,
+    question:
+      "A Forge component requiring an external API key most likely means:",
+    options: [
+      "It is broken and should not be used",
+      "It integrates with a third-party service that needs authentication",
+      "It is free of any cost",
+      "It only works offline",
+    ],
+    correctIndex: 1,
+  },
 ]

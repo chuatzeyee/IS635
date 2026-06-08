@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { RotateCcw, Shuffle, Trophy, Target, Zap } from 'lucide-react'
 import { questions } from '../data/questions'
 
-type SessionFilter = 'all' | 1 | 2 | 3 | 4 | 5 | 6
+type SessionFilter = 'all' | 1 | 2 | 3 | 4 | 5 | 6 | 8
 
 interface AnswerState {
   readonly selectedIndex: number | null
@@ -26,6 +26,7 @@ const sessionFilters: readonly { readonly label: string; readonly value: Session
   { label: 'Session 4', value: 4 },
   { label: 'Session 5', value: 5 },
   { label: 'Session 6', value: 6 },
+  { label: 'Session 8', value: 8 },
 ]
 
 function ProgressBar({ correct, attempted, total }: { readonly correct: number; readonly attempted: number; readonly total: number }) {

@@ -256,4 +256,20 @@ export const guides: readonly Guide[] = [
       "Best practice: download after every coding session to protect against environment deletion",
     ],
   },
+  {
+    id: "explore-forge-component",
+    title: "Explore, Install & Test a Forge Component",
+    steps: [
+      "Open Forge from the OutSystems home page (or service studio) — the marketplace of reusable components",
+      "Search for a component by keyword, or browse by category (UI, Connectors, Themes, etc.)",
+      "Filter results by your environment type (O11 vs ODC) and platform (Reactive Web / Mobile)",
+      "Check the component's Trust level (Supported / Trial / Not Supported), rating, downloads, and last-updated date",
+      "Open the component page and read the description, documentation, and any Demo app details",
+      "Click Install to add the component to your personal environment (install the Demo app too if available)",
+      "Open the installed module in Service Studio and explore its public Actions, Structures, and Web Blocks",
+      "Test the component via its Demo app, or consume it in a test screen to confirm it works as described",
+      "Note any required API keys, external services, or licensing constraints",
+      "Write up your findings: name, icon, description, testing observations, and how it could be used in your term project",
+    ],
+  },
 ]
