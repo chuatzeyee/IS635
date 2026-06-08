@@ -8,6 +8,7 @@ import Guides from './pages/Guides'
 import Practice from './pages/Practice'
 import Build from './pages/Build'
 import Playbook from './pages/Playbook'
+import HomeTest from './pages/HomeTest'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/practice" element={<Practice />} />
           <Route path="/build" element={<Build />} />
           <Route path="/playbook" element={<Playbook />} />
+          <Route path="/home-test" element={<HomeTest />} />
         </Routes>
       </main>
       <NavPill />

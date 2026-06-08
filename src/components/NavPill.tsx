@@ -7,6 +7,7 @@ import {
   FlaskConical,
   Hammer,
   Rocket,
+  Target,
 } from 'lucide-react'
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
   { to: '/practice', label: 'Practice', icon: FlaskConical },
   { to: '/build', label: 'Build', icon: Hammer },
   { to: '/playbook', label: 'Playbook', icon: Rocket },
+  { to: '/home-test', label: 'Lab Test', icon: Target },
 ] as const
 
 export default function NavPill() {
