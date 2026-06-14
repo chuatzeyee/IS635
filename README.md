@@ -8,10 +8,10 @@ A dark-themed, interactive study companion for **SMU IS635 — Low Code Applicat
 
 | Section | Count | Description |
 |---------|-------|-------------|
-| **Topics** | 62 topics across 7 sessions | Key concepts with expandable sections and session-colored borders |
-| **Definitions** | 69 terms | Searchable glossary with highlighted matches |
+| **Topics** | 70 topics across 8 sessions | Key concepts with expandable sections and session-colored borders |
+| **Definitions** | 81 terms | Searchable glossary with highlighted matches |
 | **Guides** | 21 guides | Step-by-step how-to walkthroughs for common OutSystems tasks |
-| **Practice** | 277 questions | Multiple-choice quiz with progress bar, accuracy tracking, and streak counter |
+| **Practice** | 297 questions | Multiple-choice quiz with progress bar, accuracy tracking, and streak counter |
 | **Build Guide** | 8 phases, 40+ sections | Comprehensive CareConnect backend build reference for OutSystems novices (includes OpenAI wrapper, consumer guide, and Product & Party UI integration) |
 
 ## Sessions Covered
@@ -23,6 +23,7 @@ A dark-themed, interactive study companion for **SMU IS635 — Low Code Applicat
 5. Interface Layer
 6. Processes Layer
 8. Exploring Forge
+10. Advanced Topics (Multitenancy & Concurrency)
 
 ## Tech Stack
 
