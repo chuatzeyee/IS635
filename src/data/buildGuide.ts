@@ -3583,7 +3583,7 @@ export const buildPhases: readonly BuildPhase[] = [
               '— NODE 3: initialise the flag —',
               'Drag an **Assign** → **MatchFound** = **False**.',
               '— NODE 4: loop the candidates —',
-              'Drag a **For Each** over **SA_ListCaregiversBySkills.Caregivers** (the returned list). Inside the loop body (Cycle branch):',
+              'Drag a **For Each** over **SA_ListCaregiversBySkills.Results** (the returned list — the output param is named **Results**, type "Caregiver List"; there is no .Caregivers). Inside the loop body (Cycle branch):',
               '   a. **If** **MatchFound = False** (only assign the FIRST match; skip the rest):',
               '   b. TRUE: drag **Run Server Action** → **SA_AssignCaregiverToRequest**; map **CareRequestId** = **CareRequestId**, **AssignedCaregiverId** = **Current.CaregiverId** (the loop\'s current caregiver).',
               '   c. → **SA_CreateCareVisit**; map **CareRequestId** = **CareRequestId**, **CaregiverId** = **Current.CaregiverId**, **FamilyUserId** = **Req.FamilyUserId**, **CheckInTime** = **Req.RequestedSlot**. Then an **Assign** → **NewVisitId** = **SA_CreateCareVisit.Result.VisitId**.',
@@ -3598,7 +3598,7 @@ export const buildPhases: readonly BuildPhase[] = [
               'Drag a final **Assign** → **Assigned** = **MatchFound**. Connect to **End**.',
             ],
             important:
-              'Key correctness points: (1) the **MatchFound flag** ensures you assign only the FIRST eligible caregiver, not all of them — guard the assign block with If(MatchFound=False). (2) Inside the loop the current caregiver is **<ForEachList>.Current.Caregiver.CaregiverId**. (3) Escalation happens only when MatchFound=False AND attempts reach Site.MaxAssignmentAttempts. (4) All these SA_* must be Public in their atomic modules and imported via Ctrl+Q, or they will not appear.',
+              'Key correctness points: (1) the **MatchFound flag** ensures you assign only the FIRST eligible caregiver, not all of them — guard the assign block with If(MatchFound=False). (2) The For Each loops over **SA_ListCaregiversBySkills.Results** (NOT .Caregivers). Inside the loop the current caregiver is the For Each\'s **Current** record — reference it as **<ForEachName>.Current.CaregiverId** (the list is a plain Caregiver List, so Current IS a Caregiver — there is no extra .Caregiver hop). (3) Escalation happens only when MatchFound=False AND attempts reach Site.MaxAssignmentAttempts. (4) All these SA_* must be Public in their atomic modules and imported via Ctrl+Q, or they will not appear.',
           },
           {
             title: 'SA_ConfirmAndRelease (US3a)',
