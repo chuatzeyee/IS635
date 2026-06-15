@@ -3788,6 +3788,17 @@ export const buildPhases: readonly BuildPhase[] = [
           'Create REST APIs that the UI team calls for user registration, login, care requests, and visit management.',
         steps: [
           {
+            title: 'JSON body shape — send FLAT, not wrapped (callers read this)',
+            instructions: [
+              'When a POST method has a single Body input parameter named **Request** (a Structure), OutSystems expects the JSON body to be the structure\'s fields at the TOP LEVEL — it does NOT wrap them under a "Request" key.',
+              'CORRECT (flat):  **{"folderName":"CareConnect","fileName":"a.txt","file":"<base64>","override":true}**',
+              'WRONG (wrapped): {"Request":{"folderName":"CareConnect",...}} — every field deserializes to empty/0, so the SA receives blank inputs (e.g. "File is mandatory", or a generic 500) even though your node mappings are correct.',
+              'This applies to ALL exposed POSTs here (RegisterUser, LoginUser, RequestCareVisit, MatchAndAssign, ConfirmAndRelease, Storage UploadFile/GetFileUrl). Field names match the Structure attributes exactly, including case (e.g. lowercase folderName/fileName/file for the S3 structures).',
+              'If a request mysteriously arrives with all-empty fields, this wrapping mistake is the #1 cause — verify with the Swagger UI "Try it out", which shows the exact flat example body.',
+            ],
+            important: 'Debugging tip used to catch this live: temporarily set the method output = "file=" + Length(File) + " key=" + Length(Site.ProductAPIKey) + " folder=" + FolderName and call once. file=0/folder= (empty) with key=36 (a Site Property, always populated) proves the BODY is not binding — i.e. it was sent wrapped. A flat body returns real lengths.',
+          },
+          {
             title: 'Create "User" REST API',
             instructions: [
               '**Logic** tab > **Integrations** > **REST** > right-click **REST** > **Expose REST API**',
