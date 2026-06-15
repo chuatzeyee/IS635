@@ -3735,7 +3735,7 @@ export const buildPhases: readonly BuildPhase[] = [
           {
             title: 'Create the Timer',
             instructions: [
-              '**Logic** tab > right-click **Timers** > **Add Timer**',
+              '**Processes** tab > right-click **Timers** > **Add Timer**. (Timers live under the **Processes** tab, NOT Logic — even in a Service module. If you only looked under Logic and saw no Timers folder, switch to the Processes tab at the bottom-left.)',
               'Name: **ReassignmentCheck**',
               'In the **Properties** panel: set **Schedule** = **"Every 30 minutes"** (or use **TimerIntervalMinutes** site property)',
               'Double-click the Timer to open its flow',
@@ -3743,8 +3743,8 @@ export const buildPhases: readonly BuildPhase[] = [
               'Drag **Run Server Action** after Start → **SA_ListCareRequestsByStatus**; map **Status** = **Entities.CareRequestStatus.Open**. Its output is a CareRequest List.',
               '— NODE 2: loop and retry each —',
               'Drag a **For Each** over **SA_ListCareRequestsByStatus.Results** (the returned list). Inside the loop body (Cycle): drag **Run Server Action** → **SA_MatchAndAssign**; map **CareRequestId** = **<ForEachName>.Current.CareRequestId**.',
-              'Connect that SA_MatchAndAssign back so the iteration ends (its outgoing connector goes to an **End** node, which lets the For Each advance to the next request).',
-              'Flow: **Start → SA_ListCareRequestsByStatus(Open) → For Each(.Results){ SA_MatchAndAssign(Current.CareRequestId) → End } **.',
+              'LOOP BACK (not an End): connect SA_MatchAndAssign\'s outgoing connector BACK TO THE FOR EACH NODE — a For Each body/Cycle path must return to the For Each, not an End (same rule as SA_MatchAndAssign). The For Each\'s separate "done" exit connector goes forward to the Timer\'s **End**.',
+              'Flow: **Start → SA_ListCareRequestsByStatus(Open) → For Each(.Results){ SA_MatchAndAssign(Current.CareRequestId) → back to For Each } → (done) End**.',
             ],
             important:
               'The Timer runs on the server automatically. It picks up requests that failed initial assignment and retries matching them with available caregivers.',
