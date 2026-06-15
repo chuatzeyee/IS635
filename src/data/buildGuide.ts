@@ -3733,21 +3733,31 @@ export const buildPhases: readonly BuildPhase[] = [
           'A **Timer** that periodically checks for open care requests and attempts to assign caregivers.',
         steps: [
           {
-            title: 'Create the Timer',
+            title: 'STEP 1 — build the Server Action SA_ReassignmentCheck (the Timer has NO flow of its own)',
             instructions: [
-              '**Processes** tab > right-click **Timers** > **Add Timer**. (Timers live under the **Processes** tab, NOT Logic — even in a Service module. If you only looked under Logic and saw no Timers folder, switch to the Processes tab at the bottom-left.)',
-              'Name: **ReassignmentCheck**',
-              'In the **Properties** panel: set **Schedule** = **"Every 30 minutes"** (or use **TimerIntervalMinutes** site property)',
-              'Double-click the Timer to open its flow',
+              'KEY FACT: in OutSystems O11 a **Timer does not contain a flow** — it just runs ONE Server Action on a schedule. So the loop logic lives in a normal Server Action; the Timer only points at it. (This is why the Timer\'s **Action** property is mandatory.)',
+              '**Logic** tab > right-click **Server Actions** > **Add Server Action**. Name: **SA_ReassignmentCheck**. No input or output parameters.',
               '— NODE 1: list the open requests —',
               'Drag **Run Server Action** after Start → **SA_ListCareRequestsByStatus**; map **Status** = **Entities.CareRequestStatus.Open**. Its output is a CareRequest List.',
               '— NODE 2: loop and retry each —',
               'Drag a **For Each** over **SA_ListCareRequestsByStatus.Results** (the returned list). Inside the loop body (Cycle): drag **Run Server Action** → **SA_MatchAndAssign**; map **CareRequestId** = **<ForEachName>.Current.CareRequestId**.',
-              'LOOP BACK (not an End): connect SA_MatchAndAssign\'s outgoing connector BACK TO THE FOR EACH NODE — a For Each body/Cycle path must return to the For Each, not an End (same rule as SA_MatchAndAssign). The For Each\'s separate "done" exit connector goes forward to the Timer\'s **End**.',
+              'LOOP BACK (not an End): connect SA_MatchAndAssign\'s outgoing connector BACK TO THE FOR EACH NODE — a For Each body/Cycle path must return to the For Each, not an End (same rule as SA_MatchAndAssign). The For Each\'s separate "done" exit connector goes forward to **End**.',
               'Flow: **Start → SA_ListCareRequestsByStatus(Open) → For Each(.Results){ SA_MatchAndAssign(Current.CareRequestId) → back to For Each } → (done) End**.',
             ],
+            tip: 'Build this as an ordinary Server Action first. The Timer in Step 2 cannot hold this logic — it can only reference it.',
+          },
+          {
+            title: 'STEP 2 — create the Timer and point it at the action',
+            instructions: [
+              '**Processes** tab > right-click **Timers** > **Add Timer**. (Timers live under the **Processes** tab, NOT Logic — even in a Service module. If you looked under Logic and saw no Timers folder, switch to the Processes tab at the bottom-left.)',
+              'Name: **ReassignmentCheck**',
+              'In the **Properties** panel set the two properties:',
+              '   • **Action** (mandatory — this is the error you saw) = **SA_ReassignmentCheck** (the Server Action you built in Step 1). Pick it from the dropdown.',
+              '   • **Schedule** = pick from the dropdown — e.g. **"When Published"** to run once on each publish, or a recurring option like every 30 minutes. (Schedule is a preset selector, not a free-text field; for a true custom interval you wake the timer from within the action and use Site.TimerIntervalMinutes, but for the demo "When Published" or a built-in recurrence is fine.)',
+              'That is the entire Timer — it has no canvas/flow. Publish; the platform runs SA_ReassignmentCheck on the chosen schedule.',
+            ],
             important:
-              'The Timer runs on the server automatically. It picks up requests that failed initial assignment and retries matching them with available caregivers.',
+              'A Timer = scheduler + a single Action reference. The retry logic is in SA_ReassignmentCheck (Step 1); the Timer (Step 2) only sets Action = SA_ReassignmentCheck and a Schedule. Setting Action clears the "Action is mandatory" error.',
           },
         ],
       },
