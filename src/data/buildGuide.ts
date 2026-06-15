@@ -156,6 +156,7 @@ export const buildPhases: readonly BuildPhase[] = [
               '**PostSurgPCId** (**Text**) — Post-Surgery Recovery ProductClass ID',
               '**MaxAssignmentAttempts** (**Integer**, default: **3**)',
               '**TimerIntervalMinutes** (**Integer**, default: **30**)',
+              '**HourlyRate** (**Decimal**, default: **40.00**) — the per-hour care fee; SA_CreatePayment uses Amount = Req.DurationHours * Site.HourlyRate',
               '**ProductAPIKey** (**Text**) — your SMULab API key',
               '**OpenAIApiKey** (**Text**) — for AI summary generation',
               '**RabbitMQ_Hostname** (**Text**)',
