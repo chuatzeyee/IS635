@@ -208,6 +208,8 @@ export const buildPhases: readonly BuildPhase[] = [
               '**GetDocumentTypes**',
               '**GetRoleTypes**',
             ],
+            important:
+              'The Party API ALSO requires an **X-Contacts-Key** header (same as Product) — without it AddPerson/GetPerson return "Invalid API Key". For EVERY Party method you use (AddPerson, GetPerson, …): click it under Integrations > REST > Party > right-click > Add Input Parameter → Name = **APIKey**, Data Type = **Text**, **Send In = Header**, Name in Header = **X-Contacts-Key**, Mandatory = Yes. Then on each call node (AddPerson in SA_DoRegisterUser, GetPerson in SA_DoLoginUser) map **APIKey = Site.ProductAPIKey** (reuse the same SMULab key, or make a PartyAPIKey). If you see "Receive In" not "Send In", you clicked an exposed method — use the CONSUMED Party method.',
           },
           {
             title: 'Product wrapper (SMULab)',
