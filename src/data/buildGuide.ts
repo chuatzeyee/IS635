@@ -3461,6 +3461,7 @@ export const buildPhases: readonly BuildPhase[] = [
               '**Name** = **GivenName + " " + FamilyName**',
               '**Email** = **Email**',
               '**Password** = **Password**  (this action hashes it — that is the whole point)',
+              '**CreatePassword** = **True**  (CRITICAL — User_CreateOrUpdateUser has a CreatePassword/UpdatePassword Boolean that DEFAULTS TO FALSE. If you leave it False the user row is created but NO password is stored, and every login fails with "Invalid username or password" even though registration succeeded. Set it True. The exact name may be CreatePassword or UpdatePassword depending on platform version — set whichever Boolean governs the password to True.)',
               '**Is_Active** = **True**',
               '(Leave **Creation_Date** blank — the platform fills it. If a single **User record** input is shown, expand it and set .Username/.Name/.Email/.Password/.Is_Active inside, with .Id = NullIdentifier().)',
               'It returns the new **UserId** — reference it downstream as **User_CreateOrUpdateUser.UserId** (or **.Id**, per version).',
