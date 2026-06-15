@@ -2400,6 +2400,28 @@ export const buildPhases: readonly BuildPhase[] = [
           },
           // CareVisit Server Actions
           {
+            title: 'Server Action mechanics — read this ONCE before building the CareVisit/Payment SAs',
+            instructions: [
+              'The Server Action steps below list every node and Assign line. This card explains the recurring "where/how" so you are not hunting for things.',
+              '— Creating a Server Action —',
+              '**Logic** tab → right-click **Server Actions** → **Add Server Action** → set Name in **Properties**. Add Input/Output Parameters by right-clicking the action.',
+              '— Where the CRUD actions (Create/Update/Get/Delete) come from —',
+              'They are AUTO-GENERATED. Expand **Data → Entities → CareVisit** (or **Payment**) in the left tree; under the entity you see **CreateCareVisit, CreateOrUpdateCareVisit, UpdateCareVisit, GetCareVisit, DeleteCareVisit**. You DRAG these from the tree onto the flow — they are not in the toolbox.',
+              'If **UpdateCareVisit** is missing (OutSystems only guarantees Create): use **CreateOrUpdateCareVisit** instead with the same Source — it updates when the record already has an Id.',
+              '— The fetch → modify → write pattern (used by every update SA) —',
+              '1. **Aggregate** reads the record into memory (e.g. GetPayments, filtered by VisitId).',
+              '2. **Assign** nodes change the in-memory record\'s fields (e.g. .Status, .UpdatedAt).',
+              '3. **UpdateXxx** CRUD writes it back, with **Source = <Aggregate>.List.Current.<Entity>**.',
+              'The Aggregate is auto-named (GetPayments, GetCareVisits…). Reference the current row as **<AggregateName>.List.Current.<Entity>.<Attribute>**.',
+              '— Static-entity enum values —',
+              'Status fields are set with **Entities.<StaticEntity>.<Value>**, e.g. **Entities.PaymentStatus.Held** or **Entities.VisitStatus.Completed**. Type "Entities." in the expression editor and autocomplete lists them.',
+              '— CurrDateTime() / NullDate() —',
+              'Timestamps use the built-in **CurrDateTime()**. An empty Date Time uses **NullDate()**. Both are in the Expression Editor under built-in Date/Time functions.',
+            ],
+            tip: 'Every "build the flow" step that follows is just an instance of this pattern: (Create SAs) Assign defaults → CreateXxx → Assign Id back; (Update SAs) Aggregate → If Empty raise NotFound → Assign fields → UpdateXxx → Assign Success=True.',
+            important: 'After building ALL Server Actions, set the Entity AND every Server Action to Public = Yes, then 1-Click Publish. A missing Public=Yes is the usual cause of the whole module returning HTTP 500.',
+          },
+          {
             title: 'Server Action: SA_CreateCareVisit',
             instructions: [
               'Right-click **Server Actions** > **Add Server Action**',
