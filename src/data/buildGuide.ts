@@ -3603,6 +3603,7 @@ export const buildPhases: readonly BuildPhase[] = [
               'Drag an **If** (call it **IfNoMatch**). Condition: **MatchFound = False** (the loop finished and still assigned nobody).',
               'TRUE branch (nobody matched): drag **Run Server Action** → **SA_IncrementAssignmentAttempts** (map **CareRequestId**) → then a SECOND **If** (call it **IfMaxAttempts**): condition **Req.AssignmentAttempts + 1 >= Site.MaxAssignmentAttempts**.',
               '   • IfMaxAttempts TRUE (too many tries): drag **Run Server Action** → **SA_EscalateRequest** (map **CareRequestId**) → connect to Node 6.',
+              '   BUILD-ORDER NOTE: **SA_EscalateRequest does not exist yet** — it is built a few steps below (after SA_ConfirmAndRelease), so it will NOT appear in the Run Server Action picker right now. Two options: (A) jump down and build SA_EscalateRequest first (it is tiny — UpdateCareRequestStatus → publish), then come back and add this call; or (B) for now wire IfMaxAttempts-TRUE straight to Node 6 (skip escalation), get matching working, and add the SA_EscalateRequest call later once it exists. The flow publishes fine either way.',
               '   • IfMaxAttempts FALSE (still under the limit — try again next Timer run): do NOTHING, connect straight to Node 6.',
               'FALSE branch of IfNoMatch (a caregiver WAS assigned): do NOTHING, connect straight to Node 6.',
               'So all three tails — SA_EscalateRequest, the IfMaxAttempts-FALSE skip, and the IfNoMatch-FALSE skip — converge on the single Node 6 Assign.',
