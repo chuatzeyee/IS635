@@ -1187,6 +1187,31 @@ export const buildPhases: readonly BuildPhase[] = [
             ],
             tip: 'The **LIKE** filter with **"%" + SkillProductClassId + "%"** matches caregivers whose comma-separated skill list contains the target class. Sorting by **LastAssignedAt Ascending** ensures round-robin assignment.',
           },
+          // SA_ListAllCaregivers
+          {
+            title: 'Server Action: SA_ListAllCaregivers',
+            instructions: [
+              'Right-click **Server Actions** > **Add Server Action**',
+              'Name: **SA_ListAllCaregivers**',
+              'Add Input Parameter:',
+              '**OnlyAvailable** — Data Type: **Boolean**, Is Mandatory: **No** (pass True to return only available caregivers; False/empty returns everyone)',
+              'Add Output Parameter:',
+              '**Results** — Data Type: **Caregiver List**',
+            ],
+            tip: 'This is the general "get all caregivers" call (an admin / family browse list). It is NOT for the caregiver\'s own post-login dashboard — for that, use SA_GetCaregiverByUserId (a single record), or you will leak every caregiver to that user.',
+          },
+          {
+            title: 'SA_ListAllCaregivers — build the flow',
+            instructions: [
+              'Drag an **Aggregate** after **Start** > Add Source: **Caregiver**. Name it **GetCaregivers**.',
+              'Add a conditional filter so OnlyAvailable can be ignored when not set: on the Filter, use condition **OnlyAvailable = False or Caregiver.IsAvailable = True**. (When OnlyAvailable is False the first clause is always true → every row passes; when True, only available caregivers pass.)',
+              'Optional: Sorting tab > sort by **Caregiver.CreatedAt Descending** (newest first) or **Caregiver.AverageRating Descending** (best first) — your choice.',
+              'Drag an **Assign** node: **Results** = **GetCaregivers.List**',
+              'Connect to **End**',
+              'Flow: **Start → Aggregate GetCaregivers(Source=Caregiver, filter OnlyAvailable=False or IsAvailable=True) → Assign(Results = GetCaregivers.List) → End**.',
+            ],
+            tip: 'The "OnlyAvailable = False or Caregiver.IsAvailable = True" filter is the OutSystems idiom for an OPTIONAL filter — one boolean input that either narrows the list or lets everything through, without needing two separate aggregates.',
+          },
           // SA_UpdateCaregiver
           {
             title: 'Server Action: SA_UpdateCaregiver',
@@ -1336,6 +1361,17 @@ export const buildPhases: readonly BuildPhase[] = [
             ],
           },
           {
+            title: 'REST Endpoint: GET /caregivers/all — ListAllCaregivers',
+            instructions: [
+              'Name: **ListAllCaregivers**',
+              'HTTP Method: **GET**',
+              'Add Input Parameter: **OnlyAvailable** — Data Type: **Boolean**, Receive In: **URL** (optional query param — ?OnlyAvailable=true to filter)',
+              'Add Output Parameter: **Results** — Data Type: **Caregiver List**',
+              'Flow: **Start** → **Run Server Action SA_ListAllCaregivers** (map OnlyAvailable = OnlyAvailable) → **Assign** (Results = SA_ListAllCaregivers.Results) → **End**',
+            ],
+            tip: 'Call it as GET /caregivers/all (everyone) or GET /caregivers/all?OnlyAvailable=true (available only). This is the endpoint an admin/family browse dashboard hits.',
+          },
+          {
             title: 'REST Endpoint: PUT /caregivers/{CaregiverId} — UpdateCaregiver',
             instructions: [
               'Name: **UpdateCaregiver**',
@@ -1372,7 +1408,7 @@ export const buildPhases: readonly BuildPhase[] = [
             title: 'Set Entity and Server Actions to Public',
             instructions: [
               '**Data** tab > **Entities** > click **Caregiver** > set **Public** = **Yes**',
-              '**Logic** tab > **Server Actions** > set **Public** = **Yes** on ALL Server Actions (**SA_CreateCaregiver**, **SA_GetCaregiverByUserId**, **SA_GetCaregiverById**, **SA_UpdateCaregiver**, **SA_ListCaregiversBySkills**, **SA_UpdateCaregiverRating**, **SA_UpdateLastAssigned**)',
+              '**Logic** tab > **Server Actions** > set **Public** = **Yes** on ALL Server Actions (**SA_CreateCaregiver**, **SA_GetCaregiverByUserId**, **SA_GetCaregiverById**, **SA_UpdateCaregiver**, **SA_ListCaregiversBySkills**, **SA_ListAllCaregivers**, **SA_UpdateCaregiverRating**, **SA_UpdateLastAssigned**)',
             ],
             important: 'Both the Entity AND the Server Actions must be Public. If either is missing, you get "Invalid Public Action" errors on publish.',
           },
