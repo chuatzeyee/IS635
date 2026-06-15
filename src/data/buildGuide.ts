@@ -283,8 +283,9 @@ export const buildPhases: readonly BuildPhase[] = [
               'Name: **SA_GetProductFamilies**',
               'Add Output Parameter:',
               '**ProductFamilies** — Data Type: **ProductFamily List**',
-              'Flow: **Start** → **GetProductFamilies** (set **APIKey** = **Site.ProductAPIKey**) → **Assign** (**ProductFamilies** = **GetProductFamilies.List**) → **End**',
+              'Flow: **Start** → **GetProductFamilies** (set **APIKey** = **Site.ProductAPIKey**) → **Assign** (**ProductFamilies** = **GetProductFamilies.Response**) → **End**',
             ],
+            important: 'Use **.Response**, NOT .List. The SMULab Product API returns a bare JSON array, so the consumed method\'s output **Response** IS the list (its data type is "ProductFamily List"). If you dot into GetProductFamilies.Response and see ProductFamilyId/Name/Description, that confirms Response is the list. The same applies to ALL four Product wrapper actions below — use .Response, not .List.',
           },
           {
             title: 'SA_GetProductClasses',
@@ -295,7 +296,7 @@ export const buildPhases: readonly BuildPhase[] = [
               '**ProductFamilyId** — Data Type: **Text**, Is Mandatory: **Yes**',
               'Add Output Parameter:',
               '**ProductClasses** — Data Type: **ProductClass List**',
-              'Flow: **Start** → **GetProductClasses** (**ProductFamilyId** = **ProductFamilyId**, **APIKey** = **Site.ProductAPIKey**) → **Assign** (**ProductClasses** = **GetProductClasses.List**) → **End**',
+              'Flow: **Start** → **GetProductClasses** (**ProductFamilyId** = **ProductFamilyId**, **APIKey** = **Site.ProductAPIKey**) → **Assign** (**ProductClasses** = **GetProductClasses.Response**) → **End**',
             ],
           },
           {
@@ -307,7 +308,7 @@ export const buildPhases: readonly BuildPhase[] = [
               '**ProductClassId** — Data Type: **Text**, Is Mandatory: **Yes**',
               'Add Output Parameter:',
               '**ProductTypes** — Data Type: **ProductType List**',
-              'Flow: **Start** → **GetProductTypes** (**ProductClassId** = **ProductClassId**, **APIKey** = **Site.ProductAPIKey**) → **Assign** (**ProductTypes** = **GetProductTypes.List**) → **End**',
+              'Flow: **Start** → **GetProductTypes** (**ProductClassId** = **ProductClassId**, **APIKey** = **Site.ProductAPIKey**) → **Assign** (**ProductTypes** = **GetProductTypes.Response**) → **End**',
             ],
           },
           {
@@ -318,7 +319,7 @@ export const buildPhases: readonly BuildPhase[] = [
               'No Input Parameters',
               'Add Output Parameter:',
               '**Hierarchy** — Data Type: **ProductHierarchy List**',
-              'Flow: **Start** → **GetProductHierarchy** (**APIKey** = **Site.ProductAPIKey**) → **Assign** (**Hierarchy** = **GetProductHierarchy.List**) → **End**',
+              'Flow: **Start** → **GetProductHierarchy** (**APIKey** = **Site.ProductAPIKey**) → **Assign** (**Hierarchy** = **GetProductHierarchy.Response**) → **End**',
             ],
           },
           {
