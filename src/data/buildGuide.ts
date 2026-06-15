@@ -3684,7 +3684,7 @@ export const buildPhases: readonly BuildPhase[] = [
               '— NODE 4: release the held payment —',
               'Drag **Run Server Action** → **SA_ReleasePayment**; map **VisitId** = **CareVisitId**. (Changes Payment status Held → Released.)',
               '— NODE 5: bump the caregiver rating / visit count —',
-              'Drag **Run Server Action** → **SA_UpdateCaregiverRating**; map **CaregiverId** = **Visit.CaregiverId**.',
+              'Drag **Run Server Action** → **SA_UpdateCaregiverRating**; map **CaregiverId** = **LongIntegerToIdentifier(Visit.CaregiverId)**. (Visit.CaregiverId is a Long Integer, but the SA input is typed "Caregiver Identifier" — wrap it in LongIntegerToIdentifier() or you get "Caregiver Identifier expected instead of Long Integer".)',
               '— NODE 6: generate + save the summary —',
               'Drag an **Assign** → local var **Summary** = (FAKED for now) **"Care visit completed. Patient: " + Visit.PatientName + ". Duration: " + Visit.DurationMinutes + " minutes. Notes: " + Visit.CaregiverNotes**.',
               'Drag **Run Server Action** → **SA_UpdateVisitSummary**; map **VisitId** = **CareVisitId**, **AIGeneratedSummary** = **Summary**.',
