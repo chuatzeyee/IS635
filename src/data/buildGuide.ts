@@ -2739,11 +2739,25 @@ export const buildPhases: readonly BuildPhase[] = [
           },
           // CareVisit REST Endpoints
           {
-            title: 'Create the "CareVisit" Exposed REST API',
+            title: 'Create the "CareVisit" Exposed REST API (the container for the Visit endpoints)',
             instructions: [
-              '**Logic** tab > **Integrations** > **REST** > right-click **REST** > **Expose REST API**',
-              'Name: **CareVisit**',
+              'GOAL: create the REST API "container" that will hold all the Visit HTTP endpoints (POST /visits, GET /visits/{id}, etc.). This step makes the empty API; you add the individual methods in the steps that follow.',
+              '— Open the REST integrations area —',
+              'Click the **Logic** tab (top bar, next to Processes/Interface/Data).',
+              'In the left tree, expand **Integrations**. Under it you will see **REST** and **SOAP**.',
+              '— Create the exposed API —',
+              'Right-click **REST** → choose **Expose REST API** (NOT "Consume REST API" — Expose = you are the server publishing endpoints; Consume = you are calling someone else\'s API).',
+              'A new REST API node appears, selected and ready to rename.',
+              '— Name it —',
+              'In the **Properties** panel (right) set **Name** = **CareVisit**. (No spaces; this name becomes part of the URL: …/rest/**CareVisit**/.)',
+              'Press Enter. You now have an empty **CareVisit** REST API under Integrations > REST.',
+              '— (Optional) confirm/leave the defaults —',
+              'Click the **CareVisit** API node and glance at Properties. Leave these at default for the lab: **Base URL** auto-generated, **Authentication** = None (the SMULab key gate is handled elsewhere / not enforced for the lab).',
+              'Notice it auto-creates **OnBeforeRequest** and **OnAfterResponse** handlers under the API — you do NOT need to edit these for CareVisit (those were only needed when CONSUMING an external API like in the Home Test lab). Leave them empty.',
+              'You will now add the actual methods (POST /visits, GET /visits/{VisitId}, etc.) to this CareVisit API in the next steps.',
             ],
+            tip: 'One module (CareConnect_CareVisit) can expose TWO REST APIs: CareVisit AND Payment. Repeat this exact step later with Name = Payment to create the second container. They live side by side under Integrations > REST.',
+            important: 'After you finish adding all CareVisit (and Payment) methods, you MUST 1-Click Publish, and the Entity + every Server Action used by the endpoints must be Public = Yes — otherwise the module fails to publish and the whole API returns HTTP 500 (a generic "Internal server error" page, not a JSON error). This is the single most common reason the CareVisit/Payment endpoints come back broken.',
           },
           {
             title: 'REST Endpoint: POST /visits — CreateCareVisit (1/2: the request Structure)',
