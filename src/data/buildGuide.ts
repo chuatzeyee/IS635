@@ -5939,6 +5939,67 @@ export const buildPhases: readonly BuildPhase[] = [
           },
         ],
       },
+      // ── 8.4: Registration & Login from the UI ──
+      {
+        id: '8.4',
+        title: 'Registration & Login from the UI (Family AND Caregiver)',
+        summary:
+          'How the CareConnect_UI screens trigger user registration and login. ONE endpoint (RegisterUser) handles both roles — do NOT call the Party API directly from the UI.',
+        steps: [
+          {
+            title: 'The golden rule — call RegisterUser, never call Party directly',
+            instructions: [
+              'There is ONE registration endpoint for BOTH Family and Caregiver: **POST /CC_Orchestration/rest/User/RegisterUser**. It is driven by a **UserRole** field ("Family" or "Caregiver").',
+              'DO NOT have the UI call the SMULab **Party** API (AddPerson) directly. Party only creates a *person record* in the external directory — it does NOT create a platform login and does NOT create a Family/Caregiver entity row. A user registered that way CANNOT log in and CANNOT book anything.',
+              'WHY one endpoint works for both: inside SA_DoRegisterUser there is an **If (UserRole = "Family")** that branches — TRUE → SA_CreateFamily, FALSE → SA_CreateCaregiver. The shared steps (AddPerson in Party, GrantUserManagerRole, EncryptPassword, User_CreateOrUpdate to make the login) run for everyone; only the last step differs by role.',
+              'So registration is a SINGLE call from the UI; the orchestration coordinates Party + Users + Family/Caregiver in one transaction. That is the entire point of the composite layer.',
+            ],
+            important:
+              'If a teammate is "calling Party directly for family", that is the bug to fix: it skips login creation (EncryptPassword + User_CreateOrUpdate) and the Family row (SA_CreateFamily), so the family exists in Party but cannot sign in or make requests. Route family registration through RegisterUser with UserRole="Family".',
+          },
+          {
+            title: 'Family vs Caregiver — which fields to send',
+            instructions: [
+              'RegisterUser accepts these body fields (flat JSON, see Phase 4.5 — NOT wrapped in {"Request":{...}}):',
+              'ALWAYS required (both roles): **GivenName**, **FamilyName**, **Email**, **Password**, **UserRole**.',
+              'Optional / role-specific: **PhoneNumber** (either role), **Bio** + **SkillProductClassIds** + **SkillProductTypeIds** (CAREGIVER ONLY).',
+              'FAMILY registration: send the 5 required fields + PhoneNumber. Send **Bio / SkillProductClassIds / SkillProductTypeIds as empty strings ""**. Do NOT put random skill ids — families have no skills, and SA_CreateFamily ignores those fields entirely. Random values would just be junk on a record that never reads them.',
+              'CAREGIVER registration: send the 5 required + PhoneNumber + **Bio** (free text) + **SkillProductClassIds** (comma-separated Class ids, e.g. "3000000040") + **SkillProductTypeIds** (comma-separated Type ids, e.g. "4000000082,4000000083"). These come from the Product hierarchy dropdowns you built in 8.2.',
+              'The skill ids must be REAL Product taxonomy ids (from GetProductHierarchy / the cascading dropdowns) — the matching engine later filters caregivers by these exact Class/Type ids.',
+            ],
+            tip: 'In a real UI you would show a "I am a family / I am a caregiver" toggle on the signup screen; the caregiver branch reveals the Bio + skill-selection widgets. Families never see those fields, so they are naturally empty.',
+          },
+          {
+            title: 'How the UI actually calls it — Consume the REST API',
+            instructions: [
+              'A Reactive Web App screen runs client-side; it cannot call a CC_Orchestration Server Action directly. It calls the **exposed REST endpoint** over HTTP. Two setup options:',
+              'OPTION A (recommended — REST): In CareConnect_UI, **Logic > Integrations > REST > right-click > Consume REST API**. Point it at the CC_Orchestration **User** API swagger (e.g. https://<env>/CC_Orchestration/rest/User/swagger.json) — this imports RegisterUser + LoginUser as callable client methods. This is the proven path (it is exactly what the test harness hits) and keeps clean layering (UI → REST → orchestration).',
+              'OPTION B (Ctrl+Q reference): Because SA_DoRegisterUser is Public and in the same environment, the UI module CAN Ctrl+Q → CC_Orchestration → import SA_DoRegisterUser and call it as a server-side action (no HTTP). It works, but it is less battle-tested than the REST path (the GrantUserManagerRole/auth-context behavior was verified over REST). Prefer Option A unless you have a reason.',
+              'Either way, the call returns **UserId**, **PartyId**, **UserRole** — store UserId (and PartyId) in the session/client to identify the logged-in user for later screens.',
+            ],
+          },
+          {
+            title: 'Wiring the Register button (Option A, step by step)',
+            instructions: [
+              'On the **Signup** screen, create local Input variables bound to the form fields: GivenName, FamilyName, Email, Password, UserRole, PhoneNumber, and (caregiver only) Bio, SkillProductClassIds, SkillProductTypeIds.',
+              'Add a **Screen Action** on the Register button (or a Client Action that calls a Server Action wrapper).',
+              'Because the consumed REST call is a Server request, the cleanest pattern is: Client Action (button) → call a small **Server Action** in the UI module that invokes the consumed **RegisterUser** method, passing the form fields. (Reactive apps call consumed REST from server-side logic.)',
+              'Map the inputs: RegisterUser.GivenName = GivenName, … UserRole = If(IsCaregiverToggle, "Caregiver", "Family"), and the skill fields = the caregiver widgets or "" for family.',
+              'On success: store **RegisterUser.UserId** / **PartyId** in a client/session variable, then navigate to the dashboard (or to login). On failure: show the error message.',
+            ],
+            important:
+              'Send the body FLAT (top-level fields), not wrapped in a "Request" object — a wrapped body makes every field arrive empty (this exact trap is documented in Phase 4.5). The consumed-method input parameters map 1:1 to the JSON keys.',
+          },
+          {
+            title: 'Login from the UI',
+            instructions: [
+              'Same pattern: consume **POST /CC_Orchestration/rest/User/LoginUser** (Email, Password). It returns **UserId, PartyId, UserRole, GivenName**.',
+              'On the Login screen, call LoginUser with the entered Email/Password. On success, store UserId + UserRole in session and route by role (Family dashboard vs Caregiver dashboard). On failure (wrong creds) it returns an error — show "Invalid email or password".',
+              'NOTE: LoginUser authenticates against the Users module login that RegisterUser created (password was encrypted at registration). This is why you must register through RegisterUser, not Party — otherwise there is no login to authenticate against.',
+            ],
+          },
+        ],
+      },
     ],
   },
 
