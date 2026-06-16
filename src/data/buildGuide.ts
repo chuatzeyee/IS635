@@ -6116,18 +6116,20 @@ export const buildPhases: readonly BuildPhase[] = [
             title: 'SA_CreatePaymentIntent (charge the card at booking)',
             instructions: [
               'Public Server Action **SA_CreatePaymentIntent**. Inputs: **AmountCents** (Integer), **Currency** (Text, default "sgd"), **FamilyUserId** (Long Integer), **Description** (Text). Outputs: **PaymentIntentId** (Text), **ClientSecret** (Text), **Success** (Boolean), **ErrorMessage** (Text).',
-              'Flow: call the consumed **/v1/payment_intents** with form fields: **amount** = AmountCents, **currency** = Currency, **capture_method** = "automatic" (charge immediately into platform balance — pay-upfront escrow holds in OUR balance, not via auth), **description** = Description. (Do NOT pass payment_method_types.)',
+              'Flow: call the consumed **/v1/payment_intents** with form fields: **amount** = AmountCents, **currency** = Currency, **description** = Description, and optionally **metadata[careRequestId]** = the request id. (Do NOT pass payment_method_types. You can OMIT capture_method — the default captures on confirmation, which is what we want; do not use manual/auth.)',
+              'VERIFIED against Stripe test mode (2026-06-16): this exact call returns **id** (pi_...), **client_secret** (pi_..._secret_...), and **status** = "requires_payment_method" (awaiting the card on the UI). After the family pays via the Payment Element it becomes "succeeded" with amount_received = AmountCents. Map PaymentIntentId = response.id, ClientSecret = response.client_secret.',
               'On success: PaymentIntentId = response.id, ClientSecret = response.client_secret (the UI/Payment Element needs this), Success = True.',
               'Wrap in an Exception Handler (All Exceptions) → Success = False, ErrorMessage = "Stripe error: " + AllExceptions.ExceptionMessage. (Same graceful-failure pattern as the OpenAI wrapper.)',
             ],
             important:
-              'capture_method = automatic means the money is captured into YOUR platform balance at booking and held there — this is the escrow. There is no 7-day expiry because it is captured, not merely authorized. The "hold" is logical (Payment.Status = Held) until the report is submitted.',
+              'The money is captured into YOUR platform balance when the card is confirmed at booking, and held there — this is the escrow. There is no 7-day expiry because it is captured, not merely authorized. The "hold" is logical (Payment.Status = Held) until the report is submitted, when you transfer the payout out.',
           },
           {
             title: 'SA_CreateRefund (cancel / failed reschedule)',
             instructions: [
               'Public Server Action **SA_CreateRefund**. Inputs: **PaymentIntentId** (Text), **Reason** (Text). Outputs: **RefundId** (Text), **Success** (Boolean), **ErrorMessage** (Text).',
               'Flow: call consumed **/v1/refunds** with form field **payment_intent** = PaymentIntentId. On success RefundId = response.id, Success = True. Exception Handler → graceful failure.',
+              'VERIFIED against Stripe test mode (2026-06-16): refunding a succeeded PaymentIntent returns **id** (re_...), **status** = "succeeded", **amount** = full amount. Map StripeRefundId = response.id.',
             ],
           },
           {
@@ -6136,6 +6138,7 @@ export const buildPhases: readonly BuildPhase[] = [
               'Public Server Action **SA_CreateTransfer**. Inputs: **AmountCents** (Integer), **Currency** (Text), **DestinationAccountId** (Text), **Description** (Text). Outputs: **TransferId** (Text), **Success** (Boolean), **ErrorMessage** (Text).',
               'DEMO STUB: do NOT call Stripe. Just set **TransferId** = "STUB-" + the description, **Success** = **True**. (Real Stripe Connect transfers need connected accounts for each caregiver, which we are deferring.)',
               'REAL (later): call consumed **/v1/transfers** with form fields **amount** = AmountCents, **currency** = Currency, **destination** = DestinationAccountId (the caregiver\'s Stripe Connect account id). Requires Stripe Connect onboarding + StripeAccountId on the Caregiver entity.',
+              'VERIFIED against Stripe test mode (2026-06-16): the /v1/transfers call shape is correct (amount/currency/destination/description accepted) — it only fails with "No such destination" until a real Connect account id is supplied. That is exactly why payout is stubbed for the demo. Commission math confirmed: SGD 120 @ CommissionRate 0.15 → Commission 18.00, Payout 102.00 (10200 cents).',
             ],
             tip: 'Keeping the SA signature identical between stub and real means SA_ConfirmAndRelease does not change when you later swap the stub for a real transfer — only the wrapper internals change.',
           },
