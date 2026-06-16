@@ -6693,4 +6693,176 @@ export const buildPhases: readonly BuildPhase[] = [
       },
     ],
   },
+
+  // ──────────────────────────────────────────────
+  // PHASE 12: Retrofit — Migrate the EXISTING payment flow to Stripe escrow
+  // ──────────────────────────────────────────────
+  {
+    id: 12,
+    title: 'Retrofit: Migrate Existing Payment Flow to Stripe',
+    description:
+      'You already built the ORIGINAL payment flow (payment created inside SA_MatchAndAssign, VisitId-required, released in full at confirmation) BEFORE adding the StripeWrapper. This phase is the exact change list to convert that working build into the Phase 9 pay-upfront Stripe escrow model. It is a DIFF — only what to add, edit, or delete — so you do not have to re-read all of Phase 9 and guess. Do the steps in order; publish in the order given.',
+    timeEstimate: '2-3 hours',
+    sections: [
+      {
+        id: '12.1',
+        title: 'Before you start — what changes and why',
+        summary: 'A one-look summary of the old vs new flow so the edits make sense.',
+        steps: [
+          {
+            title: 'Old flow vs new flow (the whole migration in one table)',
+            instructions: [
+              'OLD: family books (SA_RequestCareVisit) → caregiver matched (SA_MatchAndAssign) which ALSO created the Payment (Held) → confirm (SA_ConfirmAndRelease) released the FULL amount. Payment.VisitId was required. No Stripe, no commission.',
+              'NEW: family books (SA_RequestCareVisit) which CHARGES the card via Stripe and creates the Held Payment AT BOOKING → caregiver matched (SA_MatchAndAssign) only STAMPS VisitId+caregiver onto the existing payment → confirm (SA_ConfirmAndRelease) computes commission and releases the PAYOUT. Payment.VisitId nullable, anchored on CareRequestId. Cancel refunds via Stripe.',
+              'THE 4 MOVES: (1) payment CREATION moves from MatchAndAssign → RequestCareVisit; (2) MatchAndAssign switches from create-payment to update-payment; (3) ConfirmAndRelease gains the commission split + transfer; (4) Cancel gains the Stripe refund. Plus schema additions and the StripeWrapper calls.',
+            ],
+            important:
+              'The single biggest behavioural change: money is taken at BOOKING, not at assignment. Everything else follows from that. If you only remember one thing, it is "delete SA_CreatePayment from MatchAndAssign, add it to RequestCareVisit".',
+          },
+          {
+            title: 'Prerequisite — StripeWrapper must exist & be imported',
+            instructions: [
+              'Confirm you have built **CareConnect_StripeWrapper** with the 3 public SAs (SA_CreatePaymentIntent, SA_CreateRefund, SA_CreateTransfer) per Phase 9.3, and it is published.',
+              'In **CC_Orchestration**: Ctrl+Q → CareConnect_StripeWrapper → tick those 3 → Apply. (If not done, do it now — the edits below call them.)',
+              'Confirm Site Properties exist: **Stripe_SecretKey**, **Stripe_ApiVersion** (in StripeWrapper) and **CommissionRate** (in CC_Orchestration, Decimal 0.15).',
+            ],
+          },
+        ],
+      },
+      {
+        id: '12.2',
+        title: 'EDIT the Payment entity & PaymentStatus (CareConnect_CareVisit)',
+        summary: 'Add the new columns and statuses to your existing Payment entity.',
+        steps: [
+          {
+            title: 'Add columns to the existing Payment entity',
+            instructions: [
+              'Open **CareConnect_CareVisit > Data > Entities > Payment** (your existing entity). You are ADDING attributes, not recreating it.',
+              'ADD: **CareRequestId** (Long Integer), **CaregiverUserId** (Long Integer, default 0), **CommissionAmount** (Decimal 10,2 default 0), **PayoutAmount** (Decimal 10,2 default 0), **StripePaymentIntentId** (Text 255), **StripeTransferId** (Text 255), **StripeRefundId** (Text 255).',
+              'CHANGE: **VisitId** — keep it Long Integer but it is now OPTIONAL (it will be 0 at booking, set later by matching). No type change needed, just stop treating 0 as invalid.',
+              'Publish CareConnect_CareVisit. Existing Payment rows get the new columns with default values — no data loss.',
+            ],
+            important:
+              'Do NOT delete or recreate the Payment entity — you would lose existing rows and break the CRUD SAs. Only ADD the 7 attributes and relax VisitId.',
+          },
+          {
+            title: 'Add Pending & Cancelled to PaymentStatus',
+            instructions: [
+              'Open **PaymentStatus** static entity (it has Held/Released/Refunded). Add records **Pending** and **Cancelled**. Keep Public = Yes. Publish.',
+            ],
+          },
+        ],
+      },
+      {
+        id: '12.3',
+        title: 'EDIT the Payment Server Actions (CareConnect_CareVisit)',
+        summary: 'Extend SA_CreatePayment + SA_ReleasePayment; add SA_UpdatePaymentAssignment.',
+        steps: [
+          {
+            title: 'EDIT SA_CreatePayment — accept the booking-time fields',
+            instructions: [
+              'Open your existing **SA_CreatePayment**. ADD inputs: **CareRequestId** (Long Integer), **StripePaymentIntentId** (Text).',
+              'In its build Assign, ADD: Result.CareRequestId = CareRequestId, Result.StripePaymentIntentId = StripePaymentIntentId, Result.VisitId = 0. (It already sets Status = Held, Amount, etc. — keep those.)',
+              'Publish.',
+            ],
+          },
+          {
+            title: 'ADD SA_UpdatePaymentAssignment — new action (build node-by-node)',
+            instructions: [
+              'This is NEW (matching will call it to stamp VisitId+caregiver onto the already-created payment). Build per Phase 9.4: Server Action **SA_UpdatePaymentAssignment**, inputs CareRequestId / VisitId / CaregiverUserId, output Success.',
+              'Aggregate Payment filtered by CareRequestId → If not empty → Assign VisitId, CaregiverUserId, UpdatedAt onto the row → UpdatePayment CRUD → Success = True. Public = Yes. Publish.',
+            ],
+          },
+          {
+            title: 'EDIT SA_ReleasePayment — persist the split',
+            instructions: [
+              'Open your existing **SA_ReleasePayment** (today it just sets Status=Released, ReleasedAt). ADD inputs: **CommissionAmount** (Decimal), **PayoutAmount** (Decimal), **StripeTransferId** (Text).',
+              'In its Assign, ADD: Payment.CommissionAmount = CommissionAmount, Payment.PayoutAmount = PayoutAmount, Payment.StripeTransferId = StripeTransferId. (Keep the existing Status=Released, ReleasedAt=CurrDateTime, and the Held-guard from the concurrency work.)',
+              'Publish CareConnect_CareVisit. Re-open CC_Orchestration so Ctrl+Q picks up the new signatures.',
+            ],
+          },
+        ],
+      },
+      {
+        id: '12.4',
+        title: 'EDIT the CC_Orchestration flows (the 4 moves)',
+        summary: 'Move payment creation to booking, switch matching to update, add commission release, add refund.',
+        steps: [
+          {
+            title: 'MOVE 1 — SA_RequestCareVisit: add the Stripe charge + create the Held payment',
+            instructions: [
+              'Open **SA_RequestCareVisit**. Today it creates the CareRequest and ends. ADD after SA_CreateCareRequest (which gives NewRequestId):',
+              '   1. Assign **AmountCents** = Round((Req.DurationHours * Site.HourlyRate) * 100).',
+              '   2. Run Server Action **SA_CreatePaymentIntent**(AmountCents, Currency="sgd", CareRequestId=NewRequestId, Description="CareConnect request " + LongIntegerToText(NewRequestId)).',
+              '   3. If **SA_CreatePaymentIntent.Success = False** → raise exception (no booking if the charge setup failed).',
+              '   4. Run Server Action **SA_CreatePayment**(CareRequestId=NewRequestId, FamilyUserId=FamilyId, Amount=Req.DurationHours*Site.HourlyRate, StripePaymentIntentId=SA_CreatePaymentIntent.PaymentIntentId).',
+              '   5. ADD **ClientSecret** to this SA\'s outputs (and to the exposed RequestCareVisit method) = SA_CreatePaymentIntent.ClientSecret, so the UI Payment Element can confirm the card.',
+            ],
+            important:
+              'This is the core retrofit: payment is now CREATED here. Previously SA_RequestCareVisit did not touch payment at all.',
+          },
+          {
+            title: 'MOVE 2 — SA_MatchAndAssign: DELETE create-payment, ADD update-payment',
+            instructions: [
+              'Open **SA_MatchAndAssign**. In the match loop you currently have: SA_AssignCaregiverToRequest → SA_CreateCareVisit → **SA_CreatePayment** → SA_UpdateLastAssigned → …',
+              'DELETE the **SA_CreatePayment** node from the loop (and the Amount computation feeding it). Reconnect SA_CreateCareVisit → the next node.',
+              'ADD after SA_CreateCareVisit (which gives NewVisitId): Run Server Action **SA_UpdatePaymentAssignment**(CareRequestId = CareRequestId, VisitId = NewVisitId, CaregiverUserId = ForEachCaregiver.Current.UserId).',
+              'Net: matching no longer creates money — it links the visit + caregiver onto the payment that booking already created.',
+            ],
+            important:
+              'If you FORGET to delete the old SA_CreatePayment here, you will create a SECOND payment per request (one at booking, one at matching). Deleting it is the most important single edit in this phase.',
+          },
+          {
+            title: 'MOVE 3 — SA_ConfirmAndRelease: commission split + transfer',
+            instructions: [
+              'Open **SA_ConfirmAndRelease**. Today it calls SA_ReleasePayment(VisitId) to release the full amount. Replace that single node with:',
+              '   1. Run **SA_GetPaymentByVisitId**(VisitId=CareVisitId) → Assign Pay = result.',
+              '   2. Declare Decimal locals PayoutAmount, CommissionAmount. Assign: PayoutAmount = Round(Pay.Amount * (1 - Site.CommissionRate), 2); CommissionAmount = Pay.Amount - PayoutAmount.',
+              '   3. Run **SA_CreateTransfer**(AmountCents=Round(PayoutAmount*100), Currency="sgd", DestinationAccountId="", Description="payout visit "+LongIntegerToText(CareVisitId)). (Stub returns Success.)',
+              '   4. Run **SA_ReleasePayment**(VisitId=CareVisitId, CommissionAmount=CommissionAmount, PayoutAmount=PayoutAmount, StripeTransferId=SA_CreateTransfer.TransferId).',
+              'The rest of SA_ConfirmAndRelease (complete visit, AI summary, publish) is unchanged.',
+            ],
+          },
+          {
+            title: 'MOVE 4 — SA_CancelCareRequest: Stripe refund',
+            instructions: [
+              'Open **SA_CancelCareRequest**. ADD: find the Payment by CareRequestId (Aggregate or a get action). If its Status = Held → Run **SA_CreateRefund**(PaymentIntentId=Payment.StripePaymentIntentId, Reason) → update Payment: Status=Refunded, StripeRefundId=SA_CreateRefund.RefundId, RefundReason=Reason.',
+              'Guard: only refund a Held payment. Keep the existing cancel logic (set CareRequest status, publish) after the refund branch converges.',
+            ],
+          },
+        ],
+      },
+      {
+        id: '12.5',
+        title: 'Publish order, retest & data cleanup',
+        summary: 'Publish bottom-up, retest the full flow, and handle pre-existing payment rows.',
+        steps: [
+          {
+            title: 'Publish in dependency order',
+            instructions: [
+              'Publish in this order so consumers see fresh producer signatures: 1) CareConnect_StripeWrapper, 2) CareConnect_CareVisit, 3) CC_Orchestration, 4) CareConnect_UI (if you wired the ClientSecret/Payment Element).',
+              'If Ctrl+Q shows an action with an old signature (missing the new inputs), re-open the consumer module and Refresh the dependency, then re-publish.',
+            ],
+          },
+          {
+            title: 'Retest the full flow',
+            instructions: [
+              'Run a fresh booking: RequestCareVisit → confirm a Stripe test charge succeeded (a PaymentIntent id is stored, Payment row is Held with CareRequestId set, VisitId=0).',
+              'MatchAndAssign → confirm the SAME payment row now has VisitId + CaregiverUserId (NOT a second payment row).',
+              'ConfirmAndRelease → confirm Payment flips to Released with CommissionAmount/PayoutAmount populated.',
+              'Cancel a Held booking → confirm Payment flips to Refunded (Stripe refund id stored).',
+              'Use test_flow.sh as the harness; add a check that exactly ONE Payment row exists per CareRequest.',
+            ],
+          },
+          {
+            title: 'Old data note',
+            instructions: [
+              'Payment rows created by the OLD flow (before this retrofit) will have CareRequestId=0, no StripePaymentIntentId, etc. They are harmless but cannot be refunded via Stripe (no PaymentIntent). For a clean demo, either ignore old rows or clear the Payment table before demoing the new flow.',
+              'No migration script is needed for a class demo — just start fresh bookings after the retrofit.',
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ]
