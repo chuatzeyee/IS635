@@ -6177,9 +6177,9 @@ export const buildPhases: readonly BuildPhase[] = [
             title: 'SA_CreateRefund — build the flow (node by node)',
             instructions: [
               'Create a PUBLIC Server Action **SA_CreateRefund** in CareConnect_StripeWrapper.',
-              'INPUTS: **PaymentIntentId** (Text, Mandatory), **Reason** (Text). OUTPUTS: **RefundId** (Text), **Success** (Boolean), **ErrorMessage** (Text).',
+              'INPUTS: **PaymentIntentId** (Text, Mandatory). OUTPUTS: **RefundId** (Text), **Success** (Boolean), **ErrorMessage** (Text). (No Reason input — Stripe\'s `reason` only accepts specific enum values, so we do NOT send it; the human-readable cancel reason is stored on the Payment row by the CALLER, SA_CancelCareRequest, not here.)',
               '— NODE 1: call Stripe —',
-              'Drag **Run Server Action** → consumed **CreateRefund_API**. Map: **payment_intent** = PaymentIntentId, **Authorization** = "Bearer " + Site.Stripe_SecretKey, **StripeVersion** = Site.Stripe_ApiVersion. (Reason is for YOUR records — Stripe also accepts a `reason` field but only with specific enum values, so keep it out of the Stripe call and store it on the Payment row instead.)',
+              'Drag **Run Server Action** → consumed **CreateRefund_API**. Map: **payment_intent** = PaymentIntentId, **Authorization** = "Bearer " + Site.Stripe_SecretKey, **StripeVersion** = Site.Stripe_ApiVersion (+ **ContentType** = "application/x-www-form-urlencoded" if you added that header input).',
               '— NODE 2: copy outputs —',
               'Drag an **Assign**: **RefundId** = CreateRefund_API.Response.id, **Success** = True, **ErrorMessage** = "". Connect to **End**.',
               '— EXCEPTION branch — Exception Handler (All Exceptions) → Assign: Success = False, RefundId = "", ErrorMessage = "Stripe refund error: " + AllExceptions.ExceptionMessage → End.',
@@ -6281,7 +6281,7 @@ export const buildPhases: readonly BuildPhase[] = [
               'Open **CC_Orchestration → SA_CancelCareRequest** (the cancel composite; also reuse this logic for a failed reschedule).',
               '— NODE: find the payment — Add an **Aggregate** Source **Payment** filtered by **Payment.CareRequestId = CareRequestId** (the SA input). (Or call a small SA_GetPaymentByCareRequestId if you prefer an action over an inline aggregate.)',
               '— NODE: guard — **If** the payment exists AND **Payment.Status = Entities.PaymentStatus.Held** (only a Held payment can be refunded — never an already-Released or Refunded one).',
-              '— TRUE branch: **Run Server Action → SA_CreateRefund** (PaymentIntentId = Payment.StripePaymentIntentId, Reason = the cancel reason). On Success, update the Payment: Status = Entities.PaymentStatus.Refunded, StripeRefundId = SA_CreateRefund.RefundId, RefundReason = Reason, UpdatedAt = CurrDateTime() (via SA_RefundPayment, extended to persist these).',
+              '— TRUE branch: **Run Server Action → SA_CreateRefund** (PaymentIntentId = Payment.StripePaymentIntentId). On Success, update the Payment: Status = Entities.PaymentStatus.Refunded, StripeRefundId = SA_CreateRefund.RefundId, RefundReason = Reason (the cancel reason — set it HERE on the Payment row, since SA_CreateRefund no longer takes it), UpdatedAt = CurrDateTime() (via SA_RefundPayment, extended to persist these).',
               '— FALSE branch: do nothing (no held payment to refund). Converge both branches → continue the existing cancel logic (set CareRequest status Cancelled, publish event) → End.',
             ],
             important:
@@ -6829,7 +6829,7 @@ export const buildPhases: readonly BuildPhase[] = [
           {
             title: 'MOVE 4 — SA_CancelCareRequest: Stripe refund',
             instructions: [
-              'Open **SA_CancelCareRequest**. ADD: find the Payment by CareRequestId (Aggregate or a get action). If its Status = Held → Run **SA_CreateRefund**(PaymentIntentId=Payment.StripePaymentIntentId, Reason) → update Payment: Status=Refunded, StripeRefundId=SA_CreateRefund.RefundId, RefundReason=Reason.',
+              'Open **SA_CancelCareRequest**. ADD: find the Payment by CareRequestId (Aggregate or a get action). If its Status = Held → Run **SA_CreateRefund**(PaymentIntentId=Payment.StripePaymentIntentId) → update Payment: Status=Refunded, StripeRefundId=SA_CreateRefund.RefundId, RefundReason=Reason (set the reason on the Payment row here — SA_CreateRefund does not take it).',
               'Guard: only refund a Held payment. Keep the existing cancel logic (set CareRequest status, publish) after the refund branch converges.',
             ],
           },
