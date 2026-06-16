@@ -6533,4 +6533,156 @@ export const buildPhases: readonly BuildPhase[] = [
       },
     ],
   },
+
+  // ──────────────────────────────────────────────
+  // PHASE 11: Family & Caregiver Dashboards (UI)
+  // ──────────────────────────────────────────────
+  {
+    id: 11,
+    title: 'Family & Caregiver Dashboards',
+    description:
+      'Build the two end-user home screens in CareConnect_UI: the FAMILY dashboard (book a visit, see my requests/visits, see my payments) and the CAREGIVER dashboard (my assigned visits, submit the care report to get paid, set availability, see my earnings). Both are role-scoped — each user sees ONLY their own data — using the per-user Server Actions (SA_GetFamilyByUserId, SA_ListCareRequestsByFamily, SA_GetCaregiverByUserId, SA_ListCareVisitsByCaregiver, the payment-by-user actions). Same UI mechanics as Phases 8 and 10.',
+    timeEstimate: '4-5 hours',
+    sections: [
+      {
+        id: '11.1',
+        title: 'Role routing after login',
+        summary: 'Send Family users to the family dashboard and Caregivers to the caregiver dashboard, carrying the logged-in identity.',
+        steps: [
+          {
+            title: 'Capture identity at login',
+            instructions: [
+              'When LoginUser succeeds (Phase 8.4) it returns **UserId, PartyId, UserRole, GivenName**. Store these in **Session Variables** (Data tab > Session Variables: SessionUserId (Long Integer), SessionUserRole (Text), SessionGivenName (Text), SessionPartyId (Text)) so every screen can read who is logged in.',
+              'Set them in the login Screen Action right after a successful LoginUser, before navigating.',
+            ],
+            important:
+              'EVERY role-scoped Data Action below filters by the logged-in user (SessionUserId). This is what makes a family see only THEIR requests and a caregiver see only THEIR visits. Never pass a UserId from the client form — always use the trusted SessionUserId set at login.',
+          },
+          {
+            title: 'Route by role',
+            instructions: [
+              'In the login Screen Action, after storing session vars: **If SessionUserRole = "Family"** → Destination **FamilyDashboard**; **Else** → Destination **CaregiverDashboard**.',
+              'Set screen Roles: FamilyDashboard and CaregiverDashboard both = **Registered** (any logged-in user) — the role *routing* + the per-user data filter handle separation. (Optionally make distinct Family/Caregiver roles if you want hard screen-level blocking.)',
+            ],
+          },
+        ],
+      },
+      {
+        id: '11.2',
+        title: 'Family Dashboard',
+        summary: 'Book a visit, view my care requests + their status, view my visits, view my payments.',
+        steps: [
+          {
+            title: 'Create the screen + load the family profile',
+            instructions: [
+              'Interface > Add Screen **FamilyDashboard** (Role: Registered). Header: "Welcome, " + Session.SessionGivenName.',
+              'Data Action **LoadMyFamily** → **SA_GetFamilyByUserId**(UserId = Session.SessionUserId) → exposes the Family record (FamilyId, PartyId, etc.). You need FamilyId for booking + filtering.',
+            ],
+          },
+          {
+            title: 'Panel 1 — My Care Requests',
+            instructions: [
+              'Data Action **LoadMyRequests** → **SA_ListCareRequestsByFamily**(FamilyUserId = Session.SessionUserId, Status = NullIdentifier() for all).',
+              'Table/Cards bound to LoadMyRequests.List. Columns: PatientName, RequestedSlot, Status (label, not id), AssignedCaregiverId (show "Pending" if 0/unassigned).',
+              'Status chips let the family filter (All / Open / Assigned / Completed). On change → Refresh the Data Action.',
+            ],
+            tip: 'Show a friendly status: Open = "Finding a caregiver…", Assigned = "Caregiver assigned", Completed = "Visit complete", Escalated = "Still searching — we\'ll keep trying", Cancelled = "Cancelled & refunded".',
+          },
+          {
+            title: 'Panel 2 — Book a Visit (the pay-upfront entry point)',
+            instructions: [
+              'A "Book a Visit" button opens a **NewRequest** screen/popup with the form: PatientName, CareType (Class dropdown), Skill (Type dropdown — cascading from Phase 8.2), RequestedDate, StartTime, EndTime, Notes, optional document upload.',
+              'On submit → call the exposed **RequestCareVisit** endpoint (Phase 4.5 / 9.4) with FamilyId = LoadMyFamily.Result.FamilyId and the form fields. This is the pay-upfront flow: RequestCareVisit creates the request, charges the card (Stripe), and returns the PaymentIntent **ClientSecret**.',
+              'Mount the Stripe **Payment Element** with that ClientSecret on this screen (Phase 9.5) so the family enters their card and confirms payment right here. On payment success → navigate back to FamilyDashboard and Refresh LoadMyRequests.',
+              'For the document upload (optional supporting file), use the Storage UploadFile flow (Phase: Storage) to get an S3 key, pass it as the request\'s supporting doc.',
+            ],
+            important:
+              'Booking and paying happen together on this screen (the team\'s "payment sub-screen / card on same page"). RequestCareVisit returns ClientSecret → Payment Element confirms the charge → the request is now a paid, Held booking awaiting matching.',
+          },
+          {
+            title: 'Panel 3 — My Payments',
+            instructions: [
+              'Data Action **LoadMyPayments** → **GetPaymentsByFamily**(FamilyUserId = Session.SessionUserId) (the family-scoped payment list from Phase 9.5; if not yet built, add it: Aggregate on Payment filtered by FamilyUserId, sorted CreatedAt desc, exposed via CC_Orchestration).',
+              'Table: Amount, Status (Held = "Paid, in escrow until visit completes", Released = "Completed", Refunded = "Refunded"), the visit date, CareRequest reference.',
+              '"Upcoming/active" = Held; "History" = Released/Refunded. Optionally a total "In escrow" = Sum(Amount where Held).',
+            ],
+          },
+        ],
+      },
+      {
+        id: '11.3',
+        title: 'Caregiver Dashboard',
+        summary: 'See my assigned visits, submit the care report (triggers payout), set availability, view earnings.',
+        steps: [
+          {
+            title: 'Create the screen + load the caregiver profile',
+            instructions: [
+              'Interface > Add Screen **CaregiverDashboard** (Role: Registered). Header: "Welcome, " + Session.SessionGivenName.',
+              'Data Action **LoadMyCaregiver** → **SA_GetCaregiverByUserId**(UserId = Session.SessionUserId) → the Caregiver record (CaregiverId, Bio, IsAvailable, AverageRating, TotalVisits). You need CaregiverId to filter visits.',
+            ],
+            important:
+              'Use SA_GetCaregiverByUserId (a SINGLE record for the logged-in user) — NOT SA_ListAllCaregivers. A caregiver must see only their own profile/visits, never the whole roster.',
+          },
+          {
+            title: 'Panel 1 — My Assigned Visits',
+            instructions: [
+              'Data Action **LoadMyVisits** → **SA_ListCareVisitsByCaregiver**(CaregiverId = LoadMyCaregiver.Result.CaregiverId).',
+              'Table: VisitId, PatientName/CareRequest ref, CheckInTime (scheduled), Status (Scheduled / Completed / Disputed). Filter chips: Upcoming (Scheduled) vs Past (Completed).',
+            ],
+          },
+          {
+            title: 'Panel 2 — Submit Care Report (this is how the caregiver gets paid)',
+            instructions: [
+              'For each Scheduled visit, a "Submit Report" button → opens a form: CaregiverNotes (the report text), optional proof photo upload.',
+              'On submit → call the exposed **ConfirmAndRelease** endpoint (Phase 4.5 / 9.4) with CareVisitId, CaregiverNotes, ProofPhotoFile/Name. This is the release trigger: ConfirmAndRelease marks the visit Completed, generates the AI summary, and RELEASES the payment (payout − commission) — Phase 9.4.',
+              'On success → show "Report submitted — payment released" and Refresh LoadMyVisits + LoadMyEarnings.',
+            ],
+            important:
+              'Submitting the report is the caregiver-facing name for ConfirmAndRelease. Until they submit it, the family\'s payment stays Held (in escrow) and the caregiver is NOT paid. This is the core of the pay-upfront/escrow model: money moves to the caregiver only after the report.',
+          },
+          {
+            title: 'Panel 3 — Availability toggle',
+            instructions: [
+              'A Switch bound to LoadMyCaregiver.Result.IsAvailable. On Change → Run **SA_UpdateCaregiver**(CaregiverId = my CaregiverId, IsAvailable = new value) → Refresh LoadMyCaregiver.',
+              'When off, the matching engine (SA_ListCaregiversBySkills filters IsAvailable = True) will skip this caregiver — so this controls whether they receive new assignments.',
+            ],
+          },
+          {
+            title: 'Panel 4 — My Earnings',
+            instructions: [
+              'Data Action **LoadMyEarnings** → **GetPaymentsByCaregiver**(CaregiverUserId = Session.SessionUserId) (the caregiver-scoped payment list from Phase 9.5).',
+              'Show: PayoutAmount per visit, Status. Two totals: **Pending** = Sum(PayoutAmount where Status = Held) (visits done-or-pending but not yet released), **Received** = Sum(PayoutAmount where Status = Released).',
+              'Because payout is stubbed in the demo (Phase 9.3), "Received" reflects the recorded PayoutAmount on Released payments — correct numbers even though no real Connect transfer occurred.',
+            ],
+          },
+        ],
+      },
+      {
+        id: '11.4',
+        title: 'Navigation & test all three role screens',
+        summary: 'Wire role-based menus and verify each dashboard end-to-end.',
+        steps: [
+          {
+            title: 'Role-based navigation',
+            instructions: [
+              'Menu shows different links by role: Family → Dashboard / Book a Visit / My Payments; Caregiver → Dashboard / My Visits / Earnings; Admin → Admin Console (Phase 10).',
+              'Use If(Session.SessionUserRole = "Family", …) or Check<Role>Role() to show/hide menu items. A logged-out user sees only Login/Register.',
+            ],
+          },
+          {
+            title: 'End-to-end test (all roles)',
+            instructions: [
+              'Register a Family + a Caregiver (Phase 8.4). Log in as each and confirm role routing lands on the right dashboard.',
+              'FAMILY: Book a Visit → pay with Stripe test card (4242 4242 4242 4242, any future expiry/CVC) → request appears as Open, payment appears Held in My Payments.',
+              'Run MatchAndAssign (admin console, or the timer) → caregiver gets the visit.',
+              'CAREGIVER: see the assigned visit → Submit Report → visit Completed, AI summary generated, earnings show the payout; FAMILY payment flips to Released.',
+              'Toggle caregiver availability off → confirm they stop getting matched.',
+              'Cancel a still-Held booking (family or admin) → payment flips to Refunded.',
+            ],
+            tip: 'Stripe test cards (from the stripe:test-cards skill): 4242 4242 4242 4242 = success; 4000 0000 0000 9995 = declined (insufficient funds) to test the failure path; 4000 0025 0000 3155 = requires authentication (3DS). Use any future date + any 3-digit CVC.',
+          },
+        ],
+      },
+    ],
+  },
 ]
