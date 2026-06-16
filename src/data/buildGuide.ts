@@ -5941,4 +5941,226 @@ export const buildPhases: readonly BuildPhase[] = [
       },
     ],
   },
+
+  // ──────────────────────────────────────────────
+  // PHASE 9: Stripe Payments — Pay-Upfront Escrow
+  // ──────────────────────────────────────────────
+  {
+    id: 9,
+    title: 'Stripe Payments (Pay-Upfront Escrow)',
+    description:
+      'Re-work the payment pipeline to the team\'s pay-upfront escrow model: the family PAYS AT BOOKING (card charged immediately into the platform balance), the platform HOLDS the money, and RELEASES it to the caregiver (minus commission) only after the caregiving report is submitted. Refund on cancel / failed reschedule. Uses a real Stripe integration (test mode) via a CareConnect_StripeWrapper module; the caregiver payout/transfer is STUBBED for the demo. Full rationale: Project/CareConnect/payment_design.md.',
+    timeEstimate: '3-4 hours',
+    sections: [
+      {
+        id: '9.1',
+        title: 'Why the schema must change (read first)',
+        summary:
+          'The current Payment.VisitId-required model cannot do pay-upfront. Understand the fix before editing.',
+        steps: [
+          {
+            title: 'The contradiction in the current model',
+            instructions: [
+              'TODAY: Payment has a **required VisitId** FK, and the Visit is only created inside **SA_MatchAndAssign** (AFTER a caregiver is matched). So payment currently happens at ASSIGNMENT, not at booking.',
+              'TEAM WANTS: family pays **at booking** (before any caregiver confirmation). But at booking there is NO visit yet — so a required VisitId makes pay-upfront impossible.',
+              'FIX: anchor Payment to **CareRequestId** (which exists at booking) and make **VisitId nullable** (filled in later, after matching). The status flow Held -> Released | Refunded stays — that part of the team\'s diagram is correct.',
+            ],
+            important:
+              'The team\'s diagram is internally consistent but incompatible with pay-upfront BECAUSE of the required VisitId. Changing the anchor to CareRequestId + nullable VisitId is the whole structural fix.',
+          },
+          {
+            title: 'The Stripe constraint that picks the architecture',
+            instructions: [
+              'Stripe\'s manual-capture AUTHORIZATION hold expires in ~7 days. Care visits can be booked weeks ahead, so "authorize at booking, capture at report" does NOT work for advance bookings.',
+              'THEREFORE use **Separate Charges and Transfers**, not auth/capture:',
+              '   • At booking: **capture immediately** — the card is charged and the money sits in YOUR platform balance. No 7-day limit. Payment.Status = Held.',
+              '   • At report submission: **Transfer (Amount − commission)** to the caregiver; commission stays with the platform. Status = Released.',
+              '   • Cancel / reschedule fails: **Refund** the customer. Status = Refunded.',
+              'This maps exactly onto the existing Held/Released/Refunded enum — only the money-movement mechanism changes (charge-now + transfer-later instead of auth/capture).',
+            ],
+            tip: 'For the demo the caregiver Transfer is STUBBED (no real Stripe Connect onboarding) — SA_ReleasePayment computes commission/payout and flips Status=Released without a live transfer. The real charge and refund ARE wired against Stripe test mode.',
+          },
+        ],
+      },
+      {
+        id: '9.2',
+        title: 'Payment entity + PaymentStatus changes',
+        summary: 'Make VisitId nullable, add CareRequestId/commission/Stripe-handle fields, extend the status enum.',
+        steps: [
+          {
+            title: 'Update the PaymentStatus static entity',
+            instructions: [
+              '**Data** tab > **Entities** > **PaymentStatus** — it currently has **Held**, **Released**, **Refunded**.',
+              'Add two records: **Pending** (card entered but not yet charged) and **Cancelled** (booking voided before charge).',
+              'Keep PaymentStatus **Public = Yes** (CC_Orchestration and the wrapper reference it).',
+            ],
+          },
+          {
+            title: 'Change the Payment entity attributes',
+            instructions: [
+              '**Data** tab > **Entities** > **Payment**. Make this change to the EXISTING attribute:',
+              '**VisitId** — currently Long Integer, used as a required link. Keep the type Long Integer but treat it as NULLABLE (default **0** = "no visit yet"). It is set later by SA_MatchAndAssign.',
+              'Add NEW attributes (right-click Payment > Add Entity Attribute for each):',
+              '**CareRequestId** — Data Type: **Long Integer** (the booking-time anchor; the real link).',
+              '**CaregiverUserId** — Data Type: **Long Integer**, default **0** (who gets paid; known after matching).',
+              '**CommissionAmount** — Data Type: **Decimal**, Length **10**, Decimals **2**, default **0**.',
+              '**PayoutAmount** — Data Type: **Decimal**, Length **10**, Decimals **2**, default **0** (= Amount − CommissionAmount).',
+              '**StripePaymentIntentId** — Data Type: **Text**, Length **255** (the charge handle).',
+              '**StripeTransferId** — Data Type: **Text**, Length **255** (the payout handle; empty while stubbed).',
+              '**StripeRefundId** — Data Type: **Text**, Length **255**.',
+              'Publish CareConnect_CareVisit after the entity change.',
+            ],
+            important:
+              'Do NOT delete VisitId — downstream code (SA_GetPaymentByVisitId, ReleasePayment) still uses it. It just becomes optional: 0 at booking, real id after matching. CareRequestId is the new always-present anchor.',
+          },
+          {
+            title: 'Add the CommissionRate Site Property',
+            instructions: [
+              'In **CC_Orchestration**: **Data** > right-click **Site Properties** > **Add Site Property**.',
+              'Name: **CommissionRate**, Data Type: **Decimal**, Default Value: **0.15** (15% platform commission).',
+              'PayoutAmount = Amount * (1 − Site.CommissionRate); CommissionAmount = Amount − PayoutAmount.',
+            ],
+          },
+        ],
+      },
+      {
+        id: '9.3',
+        title: 'Build the CareConnect_StripeWrapper module',
+        summary:
+          'A Layer-1 Service module wrapping the Stripe REST API (same pattern as the OpenAI wrapper). Exposes CreatePaymentIntent / CreateRefund / CreateTransfer Server Actions.',
+        steps: [
+          {
+            title: 'Create the module + Site Properties',
+            instructions: [
+              'In the **CareConnect Integration** app, add a new **Service** module named **CareConnect_StripeWrapper** (no screens, no entities).',
+              'Add Site Properties (Data > Site Properties):',
+              '**Stripe_SecretKey** (**Text**) — use a Stripe **restricted API key** (rk_... prefix), NOT a full secret key. Set the real value in Service Center after publishing; never hardcode. (No Stripe account? `npm i -g @stripe/cli` then `stripe sandbox create` gives test keys instantly.)',
+              '**Stripe_ApiVersion** (**Text**, default **"2026-05-27.dahlia"**) — the latest Stripe API version.',
+            ],
+            important:
+              'Use a RESTRICTED key (rk_) limited to the resources you need (PaymentIntents, Refunds, Transfers). Restricted keys are the Stripe-recommended default over sk_ secret keys.',
+          },
+          {
+            title: 'Consume the Stripe REST API — CRITICAL: form-encoded, not JSON',
+            instructions: [
+              'Stripe does NOT accept JSON request bodies. It requires **application/x-www-form-urlencoded** (e.g. amount=12000&currency=sgd&capture_method=automatic). This is the #1 OutSystems-vs-Stripe gotcha.',
+              'In OutSystems, consume each Stripe endpoint as a **Consume REST API** method with: Content-Type header = **application/x-www-form-urlencoded**, and build the body as form fields (in O11 you typically add each Stripe parameter as a separate Input Parameter with **Send In = Body** so OutSystems form-encodes them, OR send a pre-built form string).',
+              'Common headers on every method: **Authorization** = "Bearer " + Site.Stripe_SecretKey (Send In = Header); **Stripe-Version** = Site.Stripe_ApiVersion (Send In = Header).',
+              'Amounts are in the smallest currency unit = **CENTS** (integer). SGD 120.00 → 12000. Convert with a helper: Cents = Round(Amount * 100).',
+              'DO NOT send **payment_method_types** — omit it so Stripe dynamically offers eligible payment methods (this is an explicit Stripe best practice; sending it is an anti-pattern).',
+            ],
+            tip: 'Consume these Stripe endpoints (all POST, form-encoded): CreatePaymentIntent → /v1/payment_intents ; CreateRefund → /v1/refunds ; CreateTransfer → /v1/transfers. Base URL https://api.stripe.com.',
+          },
+          {
+            title: 'SA_CreatePaymentIntent (charge the card at booking)',
+            instructions: [
+              'Public Server Action **SA_CreatePaymentIntent**. Inputs: **AmountCents** (Integer), **Currency** (Text, default "sgd"), **FamilyUserId** (Long Integer), **Description** (Text). Outputs: **PaymentIntentId** (Text), **ClientSecret** (Text), **Success** (Boolean), **ErrorMessage** (Text).',
+              'Flow: call the consumed **/v1/payment_intents** with form fields: **amount** = AmountCents, **currency** = Currency, **capture_method** = "automatic" (charge immediately into platform balance — pay-upfront escrow holds in OUR balance, not via auth), **description** = Description. (Do NOT pass payment_method_types.)',
+              'On success: PaymentIntentId = response.id, ClientSecret = response.client_secret (the UI/Payment Element needs this), Success = True.',
+              'Wrap in an Exception Handler (All Exceptions) → Success = False, ErrorMessage = "Stripe error: " + AllExceptions.ExceptionMessage. (Same graceful-failure pattern as the OpenAI wrapper.)',
+            ],
+            important:
+              'capture_method = automatic means the money is captured into YOUR platform balance at booking and held there — this is the escrow. There is no 7-day expiry because it is captured, not merely authorized. The "hold" is logical (Payment.Status = Held) until the report is submitted.',
+          },
+          {
+            title: 'SA_CreateRefund (cancel / failed reschedule)',
+            instructions: [
+              'Public Server Action **SA_CreateRefund**. Inputs: **PaymentIntentId** (Text), **Reason** (Text). Outputs: **RefundId** (Text), **Success** (Boolean), **ErrorMessage** (Text).',
+              'Flow: call consumed **/v1/refunds** with form field **payment_intent** = PaymentIntentId. On success RefundId = response.id, Success = True. Exception Handler → graceful failure.',
+            ],
+          },
+          {
+            title: 'SA_CreateTransfer (caregiver payout — STUBBED for demo)',
+            instructions: [
+              'Public Server Action **SA_CreateTransfer**. Inputs: **AmountCents** (Integer), **Currency** (Text), **DestinationAccountId** (Text), **Description** (Text). Outputs: **TransferId** (Text), **Success** (Boolean), **ErrorMessage** (Text).',
+              'DEMO STUB: do NOT call Stripe. Just set **TransferId** = "STUB-" + the description, **Success** = **True**. (Real Stripe Connect transfers need connected accounts for each caregiver, which we are deferring.)',
+              'REAL (later): call consumed **/v1/transfers** with form fields **amount** = AmountCents, **currency** = Currency, **destination** = DestinationAccountId (the caregiver\'s Stripe Connect account id). Requires Stripe Connect onboarding + StripeAccountId on the Caregiver entity.',
+            ],
+            tip: 'Keeping the SA signature identical between stub and real means SA_ConfirmAndRelease does not change when you later swap the stub for a real transfer — only the wrapper internals change.',
+          },
+        ],
+      },
+      {
+        id: '9.4',
+        title: 'Rewire the CC_Orchestration flows',
+        summary:
+          'Move payment creation to booking, update it at matching, release-with-commission at report submission, refund on cancel.',
+        steps: [
+          {
+            title: 'Import the wrapper + update SA_CreatePayment',
+            instructions: [
+              'In CC_Orchestration: **Ctrl+Q** → **CareConnect_StripeWrapper** producer → tick **SA_CreatePaymentIntent**, **SA_CreateRefund**, **SA_CreateTransfer** → Apply.',
+              'Update **SA_CreatePayment** (atomic, in CareConnect_CareVisit) to accept the new fields: add inputs **CareRequestId** (Long Integer), **StripePaymentIntentId** (Text). In its Assign, set Result.CareRequestId = CareRequestId, Result.StripePaymentIntentId = StripePaymentIntentId, Result.VisitId = 0 (no visit yet), Result.Status = Entities.PaymentStatus.Held. Publish.',
+            ],
+          },
+          {
+            title: 'SA_RequestCareVisit — charge at booking',
+            instructions: [
+              'This is where payment now happens (NOT in MatchAndAssign). After **SA_CreateCareRequest** returns NewRequestId, add:',
+              '   1. **Assign**: AmountCents = Round((Req.DurationHours * Site.HourlyRate) * 100).',
+              '   2. **Run Server Action → SA_CreatePaymentIntent** (AmountCents, Currency="sgd", FamilyUserId=FamilyId, Description="CareConnect request " + LongIntegerToText(NewRequestId)).',
+              '   3. **If SA_CreatePaymentIntent.Success = False** → raise an exception / return an error (do NOT create a held Payment for a charge that did not happen).',
+              '   4. **Run Server Action → SA_CreatePayment** (CareRequestId=NewRequestId, FamilyUserId=FamilyId, Amount=Req.DurationHours*Site.HourlyRate, StripePaymentIntentId=SA_CreatePaymentIntent.PaymentIntentId). Status defaults to Held inside the SA.',
+              'Add **ClientSecret** to the SA_RequestCareVisit / exposed RequestCareVisit output so the UI Payment Element can confirm the card on the booking screen.',
+            ],
+            important:
+              'Order: create the CareRequest → create the Stripe PaymentIntent → only if the charge succeeds, create the Held Payment row. If the charge fails, the family is told payment failed and no Payment/booking is finalized.',
+          },
+          {
+            title: 'SA_MatchAndAssign — attach VisitId + caregiver to the existing payment',
+            instructions: [
+              'REMOVE the old **SA_CreatePayment** call from inside the match loop (the payment already exists from booking).',
+              'After **SA_CreateCareVisit** returns NewVisitId, add a step to UPDATE the existing payment: an Aggregate/SA that finds the Payment by CareRequestId and sets **VisitId = NewVisitId** and **CaregiverUserId = ForEachCaregiver.Current.UserId** (the matched caregiver\'s UserId). (Add an SA_UpdatePaymentAssignment(CareRequestId, VisitId, CaregiverUserId) atomic action for this, mirroring the other update SAs.)',
+            ],
+            important:
+              'MatchAndAssign no longer touches money — payment was taken at booking. It only links the now-known VisitId and CaregiverUserId onto the Held payment so the later release knows who to pay.',
+          },
+          {
+            title: 'SA_ConfirmAndRelease — release with commission split',
+            instructions: [
+              'Replace the plain SA_ReleasePayment call (Node where payment was released) with the commission-aware release:',
+              '   1. **Run Server Action → SA_GetPaymentByVisitId** (VisitId = CareVisitId) → capture the Payment record (read Payment.Amount, Payment.CaregiverUserId, Payment.StripePaymentIntentId).',
+              '   2. **Assign**: PayoutAmount = Round(Payment.Amount * (1 - Site.CommissionRate), 2); CommissionAmount = Payment.Amount - PayoutAmount.',
+              '   3. **Run Server Action → SA_CreateTransfer** (AmountCents = Round(PayoutAmount*100), Currency="sgd", DestinationAccountId="" for the stub, Description="payout visit " + LongIntegerToText(CareVisitId)). (Stub returns Success=True.)',
+              '   4. **Run Server Action → SA_ReleasePayment** — extend it to also persist CommissionAmount, PayoutAmount, StripeTransferId, and set Status = Released, ReleasedAt = CurrDateTime().',
+              'Keep the existing optimistic guard pattern: only release a payment whose Status is currently Held (guard against double-release).',
+            ],
+            tip: 'Because SA_CreateTransfer is stubbed, no real money moves to the caregiver yet — but CommissionAmount/PayoutAmount are computed and stored, so the family/caregiver payment screens show correct numbers and the logic is swap-ready for real Connect transfers.',
+          },
+          {
+            title: 'Cancel / reschedule-fail — refund path',
+            instructions: [
+              'On cancellation (SA_CancelCareRequest) or a failed reschedule: look up the Payment by CareRequestId, and if Status = Held, **Run Server Action → SA_CreateRefund** (PaymentIntentId = Payment.StripePaymentIntentId, Reason). On success set Payment.Status = Refunded, StripeRefundId = SA_CreateRefund.RefundId, RefundReason = Reason.',
+              'Guard: only refund a **Held** payment (never an already-Released or Refunded one).',
+            ],
+          },
+        ],
+      },
+      {
+        id: '9.5',
+        title: 'Payment history screens + UI payment card',
+        summary:
+          'Family and caregiver payment screens, and the embedded payment card on the booking/confirm screen.',
+        steps: [
+          {
+            title: 'Family + caregiver payment screens',
+            instructions: [
+              'Expose two GET endpoints (or Data Actions) in CC_Orchestration: **GetPaymentsByFamily** (Aggregate on Payment filtered by FamilyUserId, sorted by CreatedAt desc) and **GetPaymentsByCaregiver** (filtered by CaregiverUserId).',
+              'Family screen: list each payment — Amount, Status (Held=pending service, Released=completed, Refunded), the visit date. "Upcoming" = Held; "Historical" = Released/Refunded.',
+              'Caregiver screen: list payouts — PayoutAmount, Status, visit date. Earnings pending = sum of PayoutAmount where Status=Held; earnings received = where Status=Released.',
+            ],
+          },
+          {
+            title: 'Embedded payment card (booking/confirm screen)',
+            instructions: [
+              'Use **Stripe Checkout + Payment Element** (the recommended embedded-form integration) rather than hand-building a card form.',
+              'Flow: booking screen calls RequestCareVisit → backend returns the PaymentIntent **ClientSecret** → the UI mounts the Stripe **Payment Element** with that client secret → family enters card → Payment Element confirms the charge client-side.',
+              'Check **Forge** first for an existing Stripe payment block/component (the prompt mentioned a previous team used one for an event app) — reuse it if it fits; otherwise embed Stripe.js Payment Element directly.',
+            ],
+            tip: 'The backend never sees raw card data — the Payment Element handles the card and confirms against the ClientSecret. Backend only creates the PaymentIntent and later transfers/refunds by id.',
+          },
+        ],
+      },
+    ],
+  },
 ]
