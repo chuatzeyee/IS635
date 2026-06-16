@@ -6300,4 +6300,232 @@ export const buildPhases: readonly BuildPhase[] = [
       },
     ],
   },
+
+  // ──────────────────────────────────────────────
+  // PHASE 10: Admin Overview & Control Screen (UI)
+  // ──────────────────────────────────────────────
+  {
+    id: 10,
+    title: 'Admin Overview & Control Screen',
+    description:
+      'Build a single back-office screen in CareConnect_UI that gives an operator a live overview of the whole platform (KPI cards + tables of care requests, caregivers, visits, payments) AND the controls to act on them (escalate / cancel / reassign a request, refund a payment, toggle caregiver availability). It reuses the existing CC_Orchestration Server Actions — no new backend logic except a few unfiltered "list all" actions for admin views. Same UI mechanics as Phase 8 (dependencies → Data Actions → widgets → screen actions).',
+    timeEstimate: '3-4 hours',
+    sections: [
+      {
+        id: '10.1',
+        title: 'What the admin screen shows & controls (scope)',
+        summary: 'Decide the panels and which existing Server Actions back each one before building.',
+        steps: [
+          {
+            title: 'The layout — one screen, five zones',
+            instructions: [
+              'TOP — **KPI cards** (a row of summary tiles): Open Requests, Escalated Requests, Active Caregivers, Visits Today, Payments Held (SGD), Payments Released (SGD).',
+              'ZONE A — **Care Requests table** with status filter + per-row controls (Escalate, Cancel/Refund, Re-run Match).',
+              'ZONE B — **Caregivers table** (all caregivers, availability toggle, rating).',
+              'ZONE C — **Visits table** (recent/completed visits, status, dispute control).',
+              'ZONE D — **Payments table** (Held / Released / Refunded, amount, commission, payout).',
+              'A real admin console is just tables of the entities + buttons that call the SAME orchestration actions the automated flows call. You are not inventing new business logic — you are exposing existing actions to a human operator.',
+            ],
+          },
+          {
+            title: 'Which Server Action backs each panel (data sources)',
+            instructions: [
+              'KPI "Open/Escalated Requests" + Care Requests table → **SA_ListCareRequestsByStatus** (filter by CareRequestStatus). For "all" you will add SA_ListAllCareRequests in 10.2.',
+              'Caregivers table → **SA_ListAllCaregivers** (built in Phase 3; OnlyAvailable optional).',
+              'Visits table → **SA_ListCareVisitsByCaregiver** / **SA_ListCareVisitsByCareRequest** (per filter), or add a simple SA_ListAllVisits.',
+              'Payments table + Held/Released KPIs → **SA_ListAllPayments** (added in 10.2; the family/caregiver-scoped ones from Phase 9.5 are for end users, admin needs unfiltered).',
+              'CONTROLS map to existing composites: Escalate → **SA_EscalateRequest**; Cancel+Refund → **SA_CancelCareRequest** (which now does the Stripe refund, Phase 9.4); Re-run Match → **SA_MatchAndAssign**; Dispute visit → **SA_DisputeVisit**; Caregiver availability → **SA_UpdateCaregiver**.',
+            ],
+            important:
+              'Every control is an EXISTING orchestration/atomic action. The admin screen is a thin UI over them. This is also why the admin screen is powerful — it can trigger the exact same MatchAndAssign / Escalate / Refund logic the system runs automatically.',
+          },
+          {
+            title: 'Access control — restrict to admins',
+            instructions: [
+              'This screen must NOT be Anonymous or open to families/caregivers. Create a **Role** named **Administrator** (in CareConnect_UI: Logic > Roles > Add Role, if not present).',
+              'On the AdminDashboard screen Properties > **Roles**, check **Administrator** only (uncheck Registered/Anonymous).',
+              'For the demo you grant your own user the Administrator role (Users module, or a one-off GrantAdministratorRole call at login for a known admin email).',
+            ],
+            tip: 'In OutSystems, ticking a Role on a screen auto-generates a Check<Role>Role you can also use to show/hide individual buttons (e.g. only show the Refund button to admins).',
+          },
+        ],
+      },
+      {
+        id: '10.2',
+        title: 'Add the unfiltered "list all" Server Actions (backend prep)',
+        summary: 'Admin needs whole-table views the end-user actions do not provide. Add 2-3 thin list actions.',
+        steps: [
+          {
+            title: 'SA_ListAllCareRequests (in CareConnect_CareRequest) — node by node',
+            instructions: [
+              'Open **CareConnect_CareRequest**. Create Server Action **SA_ListAllCareRequests**. INPUT: **StatusFilter** (CareRequestStatus Identifier, Mandatory = No — NullIdentifier() = all). OUTPUT: **Results** (CareRequest List).',
+              '— NODE 1: Aggregate — Source **CareRequest**. Add a CONDITIONAL filter so the status is optional: **StatusFilter = NullIdentifier() or CareRequest.Status = StatusFilter** (NullIdentifier passes everything; a real status narrows it). Sort by **CareRequest.CreatedAt Descending**.',
+              '— NODE 2: **Assign** Results = GetCareRequests.List. Connect to End. Set Public = Yes; publish.',
+            ],
+            tip: 'This is the optional-filter idiom (same as SA_ListAllCaregivers): one input that either narrows or passes everything, so the admin table can show "All" or filter by a status chip without two separate actions.',
+          },
+          {
+            title: 'SA_ListAllPayments (in CareConnect_CareVisit) — node by node',
+            instructions: [
+              'Open **CareConnect_CareVisit**. Create Server Action **SA_ListAllPayments**. INPUT: **StatusFilter** (PaymentStatus Identifier, Mandatory = No). OUTPUT: **Results** (Payment List).',
+              '— NODE 1: Aggregate Source **Payment**, filter **StatusFilter = NullIdentifier() or Payment.Status = StatusFilter**, sort **Payment.CreatedAt Descending**.',
+              '— NODE 2: Assign Results = GetPayments.List → End. Public = Yes; publish.',
+            ],
+          },
+          {
+            title: 'SA_ListAllVisits (in CareConnect_CareVisit) — optional',
+            instructions: [
+              'If you want a visits panel: Server Action **SA_ListAllVisits**, no inputs (or a StatusFilter), OUTPUT **Results** (CareVisit List). Aggregate Source CareVisit, sort by CreatedAt Descending → Assign → End. Public = Yes.',
+            ],
+          },
+          {
+            title: 'Expose them through CC_Orchestration (so the UI can reach them)',
+            instructions: [
+              'The UI talks to CC_Orchestration, not the atomic modules directly. In **CC_Orchestration**: Ctrl+Q → import SA_ListAllCareRequests, SA_ListAllPayments, (SA_ListAllVisits) from their atomic modules.',
+              'Either expose them as GET REST endpoints on CC_Orchestration (e.g. GET /admin/care-requests, /admin/payments) following the Phase 4.5 pattern, OR — since the UI is in the same environment — let the UI Ctrl+Q them directly from CC_Orchestration as Server Actions for Data Actions. Use the REST way if the UI is a separate environment; the Ctrl+Q way is simpler for one environment.',
+            ],
+            important:
+              'Decide ONE access path and be consistent with how Phase 8 did it (Phase 8 used Ctrl+Q dependency on CC_Orchestration Server Actions for Data Actions). Match that so the admin screen wires the same way the team already knows.',
+          },
+        ],
+      },
+      {
+        id: '10.3',
+        title: 'Create the AdminDashboard screen + KPI cards',
+        summary: 'The screen shell, the aggregates/data actions feeding the KPI tiles, and the tile widgets.',
+        steps: [
+          {
+            title: 'Create the screen',
+            instructions: [
+              'In **CareConnect_UI**: **Interface** tab > right-click your module/flow > **Add Screen** > choose a blank screen (or a Dashboard template if your theme offers one). Name: **AdminDashboard**.',
+              'Set Properties > Roles = **Administrator** (10.1).',
+              'Add a page title "Admin Console" and a container/grid layout (most themes give a responsive columns layout — use a row of equal columns for the KPI cards).',
+            ],
+          },
+          {
+            title: 'Data Actions that feed the KPIs',
+            instructions: [
+              'Add Data Actions (right-click screen > Add Data Action) — these run on screen load:',
+              '**LoadOpenRequests** → SA_ListCareRequestsByStatus(Status = Entities.CareRequestStatus.Open).',
+              '**LoadEscalatedRequests** → SA_ListCareRequestsByStatus(Status = Entities.CareRequestStatus.Escalated).',
+              '**LoadAllCaregivers** → SA_ListAllCaregivers(OnlyAvailable = False).',
+              '**LoadAllPayments** → SA_ListAllPayments(StatusFilter = NullIdentifier()).',
+              'Each Data Action exposes a List output you bind to widgets, and **.List.Count** gives you the KPI number directly.',
+            ],
+            tip: 'For a count KPI you do NOT need a separate count query — bind the tile to <DataAction>.List.Count (e.g. LoadOpenRequests.List.Count). For a SUM (Payments Held SGD), use an aggregate/expression over the payments list (see next step).',
+          },
+          {
+            title: 'Build the KPI card row',
+            instructions: [
+              'In the top row container, add one card/Container per KPI. Inside each: a label (e.g. "Open Requests") and an **Expression** widget bound to the metric.',
+              '**Open Requests** = LoadOpenRequests.List.Count',
+              '**Escalated** = LoadEscalatedRequests.List.Count',
+              '**Active Caregivers** = LoadAllCaregivers.List.Count (or filter to IsAvailable — see tip)',
+              '**Payments Held (SGD)** = an Expression summing held payments. Easiest: a small Aggregate on Payment filtered Status=Held with a **Sum(Amount)** output, bound here. Or compute client-side.',
+              '**Payments Released (SGD)** = same, Status=Released, Sum(PayoutAmount) to show what was actually paid out.',
+              'Style the cards with the theme (color the Escalated tile red/amber so it draws attention).',
+            ],
+            important:
+              'KPI tiles are just bound Expressions over the Data Action lists already loaded for the tables below — you rarely need extra queries. For SUMs, an Aggregate with a Sum() output column is the clean OutSystems way (SQL-free).',
+          },
+        ],
+      },
+      {
+        id: '10.4',
+        title: 'Care Requests table + admin controls',
+        summary: 'The main control zone: list requests, filter by status, and act on each row.',
+        steps: [
+          {
+            title: 'The table + status filter',
+            instructions: [
+              'Add a Data Action **LoadCareRequests** → SA_ListAllCareRequests(StatusFilter = SelectedRequestStatus) where **SelectedRequestStatus** is a screen Local Variable (CareRequestStatus Identifier, default NullIdentifier() = All).',
+              'Add a **Table** (or List/Cards) widget bound to **LoadCareRequests.List**. Columns: CareRequestId, PatientName, Status, RequestedSlot, AssignedCaregiverId, AssignmentAttempts.',
+              'Above it, add status filter buttons/dropdown (All / Open / Assigned / Escalated / Completed / Cancelled). On change: Assign SelectedRequestStatus → call **LoadCareRequests.Refresh()** so the table re-queries.',
+            ],
+            tip: 'Bind the Status column to the static-entity label (Entities.CareRequestStatus + the record) so it shows "Escalated", not the raw id.',
+          },
+          {
+            title: 'Per-row control buttons (the "control" part)',
+            instructions: [
+              'Add a column with action buttons per row. Each button triggers a **Screen Action** (client) that calls a server-side action and then refreshes the table. Wire these:',
+              '**Re-run Match** → Screen Action → Run Server Action **SA_MatchAndAssign**(CareRequestId = Current row\'s CareRequestId) → then LoadCareRequests.Refresh() + refresh KPIs. (Useful to manually retry an Open/Escalated request.)',
+              '**Escalate** → Run **SA_EscalateRequest**(CareRequestId) → refresh. (Show only when Status = Open/Assigned.)',
+              '**Cancel + Refund** → Run **SA_CancelCareRequest**(CareRequestId, Reason) → refresh. This triggers the Stripe refund path from Phase 9.4 (only refunds a Held payment). Confirm with a popup first.',
+              'Use the row\'s identifier via the table\'s **Current** row (e.g. in a List/Table, the line\'s record is in scope; pass <record>.CareRequestId to the action).',
+            ],
+            important:
+              'After ANY control action, call the relevant Data Action\'s **.Refresh()** so the table + KPI cards reflect the new state immediately. Wrap destructive actions (Cancel+Refund) in a confirmation dialog. Show/hide buttons by status so an admin cannot, e.g., escalate an already-completed request.',
+          },
+          {
+            title: 'Feedback + error handling',
+            instructions: [
+              'Each control action returns a Success/Boolean (or throws). On success show a green Toast/Feedback message ("Request escalated"); on failure show the error. OutSystems: use the built-in Feedback_Message action or your theme\'s toast.',
+              'For SA_MatchAndAssign, show the Assigned result ("Caregiver assigned" vs "No caregiver available — escalated").',
+            ],
+          },
+        ],
+      },
+      {
+        id: '10.5',
+        title: 'Caregivers, Visits & Payments panels',
+        summary: 'The remaining read/control tables.',
+        steps: [
+          {
+            title: 'Caregivers panel',
+            instructions: [
+              'Data Action **LoadCaregivers** → SA_ListAllCaregivers(OnlyAvailable = False). Table columns: CaregiverId, Bio, SkillProductClassIds, IsAvailable, AverageRating, TotalVisits, LastAssignedAt.',
+              'CONTROL — toggle availability: a Switch/checkbox per row bound to IsAvailable; On Change → Run **SA_UpdateCaregiver**(CaregiverId, IsAvailable = new value) → LoadCaregivers.Refresh(). Lets an admin take a caregiver offline.',
+            ],
+          },
+          {
+            title: 'Visits panel',
+            instructions: [
+              'Data Action **LoadVisits** → SA_ListAllVisits (or by-filter). Table columns: VisitId, CareRequestId, CaregiverId, Status, CheckInTime, CheckOutTime, DurationMinutes, FamilyConfirmed.',
+              'CONTROL — dispute: a "Dispute" button per row → Run **SA_DisputeVisit**(VisitId) → refresh. Show only for Completed visits.',
+              'Optionally show the AIGeneratedSummary in an expandable row / detail popup.',
+            ],
+          },
+          {
+            title: 'Payments panel',
+            instructions: [
+              'Data Action **LoadPayments** → SA_ListAllPayments(StatusFilter = SelectedPaymentStatus local var). Table columns: PaymentId, CareRequestId, VisitId, Amount, CommissionAmount, PayoutAmount, Status, HeldAt, ReleasedAt.',
+              'Status filter chips (All / Held / Released / Refunded) → Assign SelectedPaymentStatus → LoadPayments.Refresh().',
+              'CONTROL — manual refund (admin override): for a **Held** payment, a "Refund" button → confirm → Run **SA_CancelCareRequest** (or a dedicated SA_RefundPayment composite) → refresh. Hide the button for Released/Refunded rows.',
+              'Show totals under the table: Sum of Amount (Held) = money in escrow; Sum of PayoutAmount (Released) = paid to caregivers; Sum of CommissionAmount (Released) = platform revenue.',
+            ],
+            important:
+              'These three sums are the strongest thing to show in a demo/report: escrow balance, caregiver payouts, and platform commission — all derived from the Payment table the Phase 9 flow maintains.',
+          },
+        ],
+      },
+      {
+        id: '10.6',
+        title: 'Navigation, refresh & test',
+        summary: 'Wire the screen into the app and verify each control end-to-end.',
+        steps: [
+          {
+            title: 'Navigation + manual refresh',
+            instructions: [
+              'Add an "Admin" link in the app menu, visible only when Check**Administrator**Role() returns True.',
+              'Add a global **Refresh** button that calls every Data Action\'s .Refresh() (LoadCareRequests, LoadCaregivers, LoadVisits, LoadPayments + KPI actions) so the operator can re-pull live data without reloading the page.',
+            ],
+          },
+          {
+            title: 'End-to-end test checklist',
+            instructions: [
+              'Publish CareConnect_UI. Log in as the Administrator user. Open Admin Console.',
+              '1. KPIs show real counts (create a request via the family flow → Open count increments after Refresh).',
+              '2. Care Requests table filters by status correctly.',
+              '3. Re-run Match on an Open request → it assigns a caregiver (or escalates) → row Status changes after refresh.',
+              '4. Escalate → Status becomes Escalated; Escalated KPI increments.',
+              '5. Cancel+Refund on a request with a Held payment → Payment row flips to Refunded (verify in Payments panel) — this exercises the Phase 9 Stripe refund.',
+              '6. Toggle a caregiver offline → IsAvailable updates; that caregiver no longer gets matched.',
+              '7. Payments panel totals (escrow / payouts / commission) add up.',
+            ],
+            tip: 'Run the existing test_flow.sh to seed activity (users, requests, a confirmed visit + released payment), then open the Admin Console — you will have real rows in every panel to demo against.',
+          },
+        ],
+      },
+    ],
+  },
 ]
