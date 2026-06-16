@@ -6156,7 +6156,7 @@ export const buildPhases: readonly BuildPhase[] = [
             title: 'SA_CreatePaymentIntent — build the flow (node by node)',
             instructions: [
               'Create a PUBLIC Server Action **SA_CreatePaymentIntent** in CareConnect_StripeWrapper (Properties > Public = Yes).',
-              'INPUTS: **AmountCents** (Integer, Mandatory), **Currency** (Text, default "sgd"), **CareRequestId** (Long Integer), **Description** (Text).',
+              'INPUTS: **AmountCents** (Integer, Mandatory), **Currency** (Text, default "sgd"), **Description** (Text). (No CareRequestId input — it was only for the optional metadata, which we skip. The request id stays visible via Description, and SA_CreatePayment stores CareRequestId on the Payment row.)',
               'OUTPUTS: **PaymentIntentId** (Text), **ClientSecret** (Text), **Success** (Boolean), **ErrorMessage** (Text).',
               '— NODE 1: call Stripe —',
               'Drag **Run Server Action** after Start → the consumed **CreatePaymentIntent_API**. Map its inputs: **amount** = AmountCents, **currency** = Currency, **description** = Description, **Authorization** = "Bearer " + Site.Stripe_SecretKey, **StripeVersion** = Site.Stripe_ApiVersion.',
@@ -6243,7 +6243,7 @@ export const buildPhases: readonly BuildPhase[] = [
             instructions: [
               'This is where payment now happens (NOT in MatchAndAssign). After **SA_CreateCareRequest** returns NewRequestId, add:',
               '   1. **Assign**: AmountCents = Round((Req.DurationHours * Site.HourlyRate) * 100).',
-              '   2. **Run Server Action → SA_CreatePaymentIntent** (AmountCents, Currency="sgd", FamilyUserId=FamilyId, Description="CareConnect request " + LongIntegerToText(NewRequestId)).',
+              '   2. **Run Server Action → SA_CreatePaymentIntent** (AmountCents, Currency="sgd", Description="CareConnect request " + LongIntegerToText(NewRequestId)). (SA_CreatePaymentIntent takes only AmountCents/Currency/Description + the header inputs — the family id and request id live on the Payment row via SA_CreatePayment, not on the Stripe call.)',
               '   3. **If SA_CreatePaymentIntent.Success = False** → raise an exception / return an error (do NOT create a held Payment for a charge that did not happen).',
               '   4. **Run Server Action → SA_CreatePayment** (CareRequestId=NewRequestId, FamilyUserId=FamilyId, Amount=Req.DurationHours*Site.HourlyRate, StripePaymentIntentId=SA_CreatePaymentIntent.PaymentIntentId). Status defaults to Held inside the SA.',
               'Add **ClientSecret** to the SA_RequestCareVisit / exposed RequestCareVisit output so the UI Payment Element can confirm the card on the booking screen.',
@@ -6796,7 +6796,7 @@ export const buildPhases: readonly BuildPhase[] = [
             instructions: [
               'Open **SA_RequestCareVisit**. Today it creates the CareRequest and ends. ADD after SA_CreateCareRequest (which gives NewRequestId):',
               '   1. Assign **AmountCents** = Round((Req.DurationHours * Site.HourlyRate) * 100).',
-              '   2. Run Server Action **SA_CreatePaymentIntent**(AmountCents, Currency="sgd", CareRequestId=NewRequestId, Description="CareConnect request " + LongIntegerToText(NewRequestId)).',
+              '   2. Run Server Action **SA_CreatePaymentIntent**(AmountCents, Currency="sgd", Description="CareConnect request " + LongIntegerToText(NewRequestId)). (No CareRequestId arg — see SA_CreatePaymentIntent signature; the id is in the Description and on the Payment row.)',
               '   3. If **SA_CreatePaymentIntent.Success = False** → raise exception (no booking if the charge setup failed).',
               '   4. Run Server Action **SA_CreatePayment**(CareRequestId=NewRequestId, FamilyUserId=FamilyId, Amount=Req.DurationHours*Site.HourlyRate, StripePaymentIntentId=SA_CreatePaymentIntent.PaymentIntentId).',
               '   5. ADD **ClientSecret** to this SA\'s outputs (and to the exposed RequestCareVisit method) = SA_CreatePaymentIntent.ClientSecret, so the UI Payment Element can confirm the card.',
