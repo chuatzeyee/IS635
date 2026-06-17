@@ -6064,9 +6064,9 @@ export const buildPhases: readonly BuildPhase[] = [
           {
             title: 'Update the PaymentStatus static entity',
             instructions: [
-              '**Data** tab > **Entities** > **PaymentStatus** — it currently has **Held**, **Released**, **Refunded**.',
-              'Add two records: **Pending** (card entered but not yet charged) and **Cancelled** (booking voided before charge).',
-              'Keep PaymentStatus **Public = Yes** (CC_Orchestration and the wrapper reference it).',
+              'In **CC_Orchestration** (PaymentStatus lives there, created in Phase 1.4 — NOT in CareConnect_CareVisit): **Data** tab > **Entities** > **PaymentStatus** — it currently has **Held**, **Released**, **Refunded**.',
+              'Right-click PaymentStatus > **Add Record** twice: **Pending** (card entered but not yet charged) and **Cancelled** (booking voided before charge).',
+              'It is already **Public = Yes**. Publish CC_Orchestration; the new records flow to consuming modules (CareConnect_CareVisit) automatically through the existing dependency.',
             ],
           },
           {
@@ -6844,7 +6844,9 @@ export const buildPhases: readonly BuildPhase[] = [
           {
             title: 'Add Pending & Cancelled to PaymentStatus',
             instructions: [
-              'Open **PaymentStatus** static entity (it has Held/Released/Refunded). Add records **Pending** and **Cancelled**. Keep Public = Yes. Publish.',
+              'PaymentStatus lives in **CC_Orchestration** (you created it in Phase 1.4 alongside CareRequestStatus/VisitStatus) — NOT in CareConnect_CareVisit. CareConnect_CareVisit only consumes it.',
+              'Open **CC_Orchestration** → **Data** tab → **Entities** → **PaymentStatus** (it has Held/Released/Refunded). Right-click → **Add Record** → add **Pending**, then again → **Cancelled**. It is already Public = Yes. Publish CC_Orchestration.',
+              'After publishing, open CareConnect_CareVisit (and CC_Orchestration consumers) — the new records flow through the existing PaymentStatus dependency automatically. If Entities.PaymentStatus.Cancelled does not appear, Ctrl+Q → refresh the CC_Orchestration dependency → republish.',
             ],
           },
         ],
