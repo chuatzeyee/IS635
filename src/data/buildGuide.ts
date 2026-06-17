@@ -6378,9 +6378,7 @@ export const buildPhases: readonly BuildPhase[] = [
               '   • Both branches rejoin → Assign Success = True → End.',
             ],
             important:
-              'Layering: the ATOMIC SA_CancelCareRequest (CareConnect_CareRequest) stays untouched and only flips the CareRequest status. The NEW composite SA_CancelAndRefund (CC_Orchestration) calls it AND does the Stripe refund + Payment update. This mirrors how SA_ConfirmAndRelease composes SA_CompleteCareVisit + SA_ReleasePayment + Stripe. (Phase 9.1 module map mislabeled SA_CancelCareRequest as a CC_Orchestration composite — it is actually atomic in CareConnect_CareRequest; the composite is this new SA_CancelAndRefund.)',
-            important:
-              'Only ever refund a Held payment. If the caregiver already submitted the report (Released), the money is gone to the caregiver — a cancellation then is a business dispute, not an automatic refund.',
+              'Layering: the ATOMIC SA_CancelCareRequest (CareConnect_CareRequest) stays untouched and only flips the CareRequest status. The NEW composite SA_CancelAndRefund (CC_Orchestration) calls it AND does the Stripe refund + Payment update — mirroring how SA_ConfirmAndRelease composes SA_CompleteCareVisit + SA_ReleasePayment + Stripe. (Phase 9.1 module map mislabeled SA_CancelCareRequest as a CC_Orchestration composite — it is actually atomic in CareConnect_CareRequest; the composite is this new SA_CancelAndRefund.) And: only ever refund a HELD payment — if the caregiver already submitted the report (Released), the money is with the caregiver, so a cancellation then is a business dispute, not an automatic refund.',
           },
         ],
       },
