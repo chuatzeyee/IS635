@@ -7063,4 +7063,141 @@ export const buildPhases: readonly BuildPhase[] = [
       },
     ],
   },
+
+  // ──────────────────────────────────────────────
+  // PHASE 13: Slot-Based Scheduling (matching honors AvailabilitySlots)
+  // ──────────────────────────────────────────────
+  {
+    id: 13,
+    title: 'Slot-Based Scheduling',
+    description:
+      'Make matching honor real time slots: a caregiver is only assignable if they have an UNBOOKED AvailabilitySlot that covers the requested date+time, and when assigned that slot gets BOOKED (and freed again on cancel). Today matching only checks the caregiver-level IsAvailable flag and ignores the AvailabilitySlot calendar entirely — this wires the calendar into SA_MatchAndAssign so two visits can never overlap on one caregiver.',
+    timeEstimate: '2-3 hours',
+    sections: [
+      {
+        id: '13.1',
+        title: 'How the times line up (read first)',
+        summary: 'Understand the date/time mismatch between CareRequest and AvailabilitySlot, and the clean way to compare them.',
+        steps: [
+          {
+            title: 'The data shapes (and the comparison plan)',
+            instructions: [
+              'CareRequest stores **RequestedSlot** (a Date Time, e.g. 2026-06-25 09:00) and **DurationHours** (Decimal, e.g. 3). So the request occupies RequestedSlot .. RequestedSlot+DurationHours.',
+              'AvailabilitySlot stores **SlotDate** (Date), **SlotStartTime** (Time), **SlotEndTime** (Time), **IsBooked** (Boolean), **CaregiverId**, **CareTypeProductClassId**.',
+              'PROBLEM: one side is a combined Date Time, the other is a separate Date + Time. You cannot compare them directly in an Aggregate filter cleanly.',
+              'PLAN (keeps the Aggregate simple): the CALLER (SA_MatchAndAssign) breaks the request into three plain values first — **ReqDate** = Date(RequestedSlot), **ReqStart** = Time(RequestedSlot), **ReqEnd** = AddHours(RequestedSlot, DurationHours) then Time(...) — and passes those to a new action SA_GetCoveringSlot. That action\'s Aggregate then does pure same-type comparisons (Date=Date, Time<=Time).',
+              'COVERING means: same caregiver, same date, slot not booked, and the slot\'s time window CONTAINS the request window: SlotStartTime <= ReqStart AND SlotEndTime >= ReqEnd.',
+            ],
+            important:
+              'Do the Date()/Time() extraction in the CALLER and pass simple Date + Time inputs into SA_GetCoveringSlot. That avoids trying to mix Date Time and Time inside one Aggregate filter, which is the part that gets messy.',
+          },
+        ],
+      },
+      {
+        id: '13.2',
+        title: 'SA_GetCoveringSlot (in CareConnect_AvailabilitySlot) — node by node',
+        summary: 'A new atomic action: given caregiver + date + start + end, return the first unbooked slot that covers it (or empty).',
+        steps: [
+          {
+            title: 'Create the action',
+            instructions: [
+              'Open **CareConnect_AvailabilitySlot** > right-click **Server Actions** > **Add Server Action** > Name **SA_GetCoveringSlot**. Set **Public = Yes**.',
+              'INPUTS: **CaregiverId** (Long Integer, Mandatory), **ReqDate** (Date, Mandatory), **ReqStart** (Time, Mandatory), **ReqEnd** (Time, Mandatory).',
+              'OUTPUTS: **SlotId** (Long Integer — 0 if none found), **Found** (Boolean).',
+            ],
+          },
+          {
+            title: 'Build the flow',
+            instructions: [
+              '— NODE 1: Aggregate —',
+              'Add an **Aggregate**, Source **AvailabilitySlot** (auto-named GetAvailabilitySlots). Add Filters (all AND-ed):',
+              '   • **AvailabilitySlot.CaregiverId = CaregiverId**',
+              '   • **AvailabilitySlot.SlotDate = ReqDate**',
+              '   • **AvailabilitySlot.IsBooked = False**',
+              '   • **AvailabilitySlot.SlotStartTime <= ReqStart**',
+              '   • **AvailabilitySlot.SlotEndTime >= ReqEnd**',
+              'Sorting: SlotStartTime Ascending. Max. Records = 1 (take the first covering slot).',
+              '— NODE 2: If — found one? —',
+              'Drag an **If**: condition **not GetAvailabilitySlots.List.Empty**.',
+              '   • TRUE → Assign: **SlotId = GetAvailabilitySlots.List.Current.AvailabilitySlot.AvailabilitySlotId**, **Found = True** → End.',
+              '   • FALSE → Assign: **SlotId = 0**, **Found = False** → End.',
+            ],
+            tip: 'All five filters are simple same-type comparisons (Long Integer, Date, Boolean, Time, Time) — no Date Time juggling here, because the caller already split the request into Date + two Times. Publish CareConnect_AvailabilitySlot and Ctrl+Q it into CC_Orchestration.',
+          },
+        ],
+      },
+      {
+        id: '13.3',
+        title: 'Wire it into SA_MatchAndAssign (CC_Orchestration)',
+        summary: 'Inside the match loop: compute the request window, require a covering slot per caregiver, and book it on assign.',
+        steps: [
+          {
+            title: 'Prerequisites',
+            instructions: [
+              'In CC_Orchestration, Ctrl+Q import **SA_GetCoveringSlot** and **SA_BookSlot** (CareConnect_AvailabilitySlot) if not already in.',
+              'Recall the loop currently is: a. If(MatchFound=False) → b. SA_AssignCaregiverToRequest → b2. IfClaimed → c. SA_CreateCareVisit → d. SA_UpdatePaymentAssignment → e. SA_UpdateLastAssigned → f. SA_PublishEvent → g. MatchFound=True → back to For Each.',
+            ],
+          },
+          {
+            title: 'NODE (before the loop): compute the request window once',
+            instructions: [
+              'You only need to compute these once (Req is already fetched at Node 1 of MatchAndAssign). After loading Req, add an **Assign** with three Local Variables:',
+              '   • **ReqDate** (Date) = Date(Req.RequestedSlot)',
+              '   • **ReqStart** (Time) = Time(Req.RequestedSlot)',
+              '   • **ReqEnd** (Time) = Time(AddHours(Req.RequestedSlot, DurationHoursAsInt))',
+              'NOTE on DurationHours: it is a Decimal. AddHours takes an Integer, so use **AddHours(Req.RequestedSlot, DecimalToInteger(Req.DurationHours))** (whole hours — fine for the demo; for fractional hours use AddMinutes(Req.RequestedSlot, DecimalToInteger(Req.DurationHours*60))).',
+            ],
+          },
+          {
+            title: 'Inside the loop: gate each caregiver on a covering slot',
+            instructions: [
+              'Insert a new step between **a (If MatchFound=False, TRUE)** and **b (SA_AssignCaregiverToRequest)**:',
+              '— a2. Run Server Action → **SA_GetCoveringSlot**: CaregiverId = FindCaregivers.Result.Current.CaregiverId, ReqDate = ReqDate, ReqStart = ReqStart, ReqEnd = ReqEnd.',
+              '— a3. Drag an **If** (call it **IfHasSlot**): condition **SA_GetCoveringSlot.Found**.',
+              '   • FALSE (this caregiver has no covering unbooked slot) → connect straight BACK to the For Each node (skip this caregiver; the loop tries the next one).',
+              '   • TRUE → continue to b (SA_AssignCaregiverToRequest).',
+              'So a skilled+available caregiver is now only assigned if they ALSO have a real free slot covering the time.',
+            ],
+            important:
+              'IfHasSlot FALSE must loop back to the For Each (same as the other skip branches), NOT to an End. This is how the loop moves on to the next candidate when one has no slot.',
+          },
+          {
+            title: 'After assigning: book the slot + store it on the request',
+            instructions: [
+              'In the assign chain, after **c (SA_CreateCareVisit)** and your existing steps, add:',
+              '— Run Server Action → **SA_BookSlot**: AvailabilitySlotId = SA_GetCoveringSlot.SlotId. (Marks the slot IsBooked=True so it cannot be matched again.)',
+              '— Persist the slot id on the request: when you assign, also set CareRequest.AvailabilitySlotId = SA_GetCoveringSlot.SlotId. Easiest: add an AvailabilitySlotId input to SA_AssignCaregiverToRequest (or a tiny SA_SetRequestSlot) and map it. (CareRequest already has the AvailabilitySlotId column.)',
+              'Order inside the True chain becomes: b SA_AssignCaregiverToRequest → b2 IfClaimed → c SA_CreateCareVisit → **SA_BookSlot(SA_GetCoveringSlot.SlotId)** → d SA_UpdatePaymentAssignment → e SA_UpdateLastAssigned → f SA_PublishEvent → g MatchFound=True → back to For Each.',
+            ],
+            tip: 'Booking the slot is what prevents double-booking: once booked, SA_GetCoveringSlot will not return it for any other request (its IsBooked=False filter excludes it).',
+          },
+          {
+            title: 'Free the slot on cancel (symmetry)',
+            instructions: [
+              'In **SA_CancelAndRefund** (and any cancel path): if the CareRequest has an AvailabilitySlotId > 0, Run Server Action → **SA_UnbookSlot**(AvailabilitySlotId = CareRequest.AvailabilitySlotId) so the freed time becomes bookable again.',
+              'Guard: only unbook if AvailabilitySlotId > 0 (a request cancelled before matching never booked a slot).',
+            ],
+          },
+        ],
+      },
+      {
+        id: '13.4',
+        title: 'Test slot-based matching',
+        summary: 'Verify a caregiver with no slot is skipped, one with a slot is matched + the slot booked, and double-booking is prevented.',
+        steps: [
+          {
+            title: 'Test checklist',
+            instructions: [
+              '1. Register a caregiver, create ONE unbooked slot for a specific date/time covering the request window.',
+              '2. Book a request for that date/time → MatchAndAssign → should assign that caregiver AND flip the slot to IsBooked=True; CareRequest.AvailabilitySlotId set.',
+              '3. Book a SECOND request for the SAME caregiver/time → MatchAndAssign → that caregiver should now be SKIPPED (slot already booked); request escalates if no other caregiver has a covering slot.',
+              '4. Cancel the first request → its slot should flip back to IsBooked=False (bookable again).',
+              '5. Caregiver with skills + IsAvailable=True but NO slot for the date → never assigned for that date.',
+            ],
+            tip: 'Use the atomic AvailabilitySlot REST endpoints to set up + inspect slots: POST /CareConnect_AvailabilitySlot/rest/AvailabilitySlot/availability-slots (create), GET .../availability-slots/list?CaregiverId=&IsBooked=false (inspect).',
+          },
+        ],
+      },
+    ],
+  },
 ]
