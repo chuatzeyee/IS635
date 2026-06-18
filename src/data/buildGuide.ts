@@ -7307,4 +7307,152 @@ export const buildPhases: readonly BuildPhase[] = [
       },
     ],
   },
+
+  // ──────────────────────────────────────────────
+  // PHASE 14: Two-Phase Visit Completion (split Complete vs Confirm+Release)
+  // ──────────────────────────────────────────────
+  {
+    id: 14,
+    title: 'Two-Phase Visit Completion (US3a/US3b)',
+    description:
+      'Split the single SA_ConfirmAndRelease (which today completes the visit AND releases payment in one caregiver call) into the team\'s intended TWO phases: (A) the CAREGIVER submits the report → visit Completed, payment STAYS HELD; then (B) the FAMILY confirms → payment Released (commission split) + rating + summary. This is the correct escrow model: money only leaves escrow after the family approves. Good news: the atomic actions already exist (SA_CompleteCareVisit marks Completed; SA_ConfirmCareVisit sets FamilyConfirmed; the Payment release SAs work) — this is a COMPOSE + SPLIT, not a rebuild.',
+    timeEstimate: '1-2 hours',
+    sections: [
+      {
+        id: '14.1',
+        title: 'Before / after (what changes)',
+        summary: 'Understand the split before editing — you are separating one working flow into two.',
+        steps: [
+          {
+            title: 'Old (one call) vs New (two calls)',
+            instructions: [
+              'TODAY: SA_ConfirmAndRelease (caregiver calls it) does EVERYTHING in one go — complete the visit, AI summary, release the payment (commission split), rating. Payment goes Held → Released the instant the caregiver submits. The family never approves.',
+              'NEW — PHASE A (caregiver): a new composite **SA_DoCompleteVisit** → marks the visit Completed + generates the AI summary + publishes "VisitCompleted". Payment STAYS HELD.',
+              'NEW — PHASE B (family): the EXISTING SA_ConfirmAndRelease, TRIMMED to only the family half → set FamilyConfirmed=True, release the payment (commission split), bump rating, publish "VisitConfirmed".',
+              'THE MOVE: take the completion nodes (proof upload, SA_CompleteCareVisit, AI summary) OUT of SA_ConfirmAndRelease and put them in the new SA_DoCompleteVisit; leave the release nodes in SA_ConfirmAndRelease. Net: the caregiver completes; the family releases.',
+            ],
+            important:
+              'The atomic actions already exist (SA_CompleteCareVisit, SA_ConfirmCareVisit, SA_GetPaymentByVisitId, SA_ReleasePayment, SA_UpdateCaregiverRating, SA_UpdateVisitSummary) and the CareVisit entity already has FamilyConfirmed/FamilyConfirmedAt columns. You are only re-composing them, not adding data model or new logic.',
+          },
+          {
+            title: 'WHY this is the better model (for the report)',
+            instructions: [
+              'Escrow means money is HELD until the buyer (family) confirms delivery. Releasing the moment the caregiver self-reports defeats escrow — the family has no chance to approve. The two-phase flow restores the family approval gate: caregiver submits report → family reviews + confirms → THEN payout. This is the standard marketplace pattern (e.g. how Airbnb/Upwork release funds after the buyer accepts).',
+            ],
+          },
+        ],
+      },
+      {
+        id: '14.2',
+        title: 'PHASE A — SA_DoCompleteVisit (caregiver report; payment stays Held)',
+        summary: 'A new CC_Orchestration composite the caregiver calls. Completes the visit + AI summary. Does NOT touch payment.',
+        steps: [
+          {
+            title: 'Create the composite + signature',
+            instructions: [
+              'In **CC_Orchestration** > right-click **Server Actions** > **Add Server Action** > Name **SA_DoCompleteVisit**. (Public = Yes is automatic for exposing later; set it if needed.)',
+              'INPUTS: **CareVisitId** (Long Integer, Mandatory), **CaregiverNotes** (Text), **ProofPhotoFile** (Text, base64), **ProofPhotoFileName** (Text).',
+              'OUTPUT: **Success** (Boolean).',
+              'Prereq imports (Ctrl+Q if not already in CC_Orchestration): **SA_CompleteCareVisit**, **SA_GetCareVisitById** (CareConnect_CareVisit); **SA_UploadToS3** (Storage wrapper); **SA_UpdateVisitSummary** (CareConnect_CareVisit); and the OpenAI **ChatCompletion** (CareConnect_OpenAIWrapper) if you do real summaries.',
+            ],
+          },
+          {
+            title: 'Build the flow — node by node',
+            instructions: [
+              'Declare a Local Variable **ProofKey** (Text) and **Summary** (Text), and **Visit** (CareVisit) if you read facts.',
+              '— NODE 1: optional proof-photo upload —',
+              'Drag an **If**: condition **ProofPhotoFile <> ""**.',
+              '   • TRUE → Run **SA_UploadToS3** (FileName=ProofPhotoFileName, File=ProofPhotoFile, FolderName="CareConnect", SubFolderName="proof-photos") → Assign **ProofKey = SA_UploadToS3.S3Key**.',
+              '   • FALSE → Assign **ProofKey = ""**.',
+              '   Both branches converge on Node 2.',
+              '— NODE 2: complete the visit —',
+              'Run **SA_CompleteCareVisit**: VisitId = CareVisitId, CheckOutTime = CurrDateTime(), ProofPhotoS3Key = ProofKey, CaregiverNotes = CaregiverNotes. (This sets Status = Completed; DurationMinutes computed — keep the negative-clamp from Phase guide.)',
+              '— NODE 3: get visit facts (for the summary) —',
+              'Run **SA_GetCareVisitById** (VisitId = CareVisitId) → Assign **Visit = .Result**.',
+              '— NODE 4: AI summary —',
+              'Assign **Summary** = (Option A faked) "Care visit completed. Duration: " + IntegerToText(Visit.DurationMinutes) + " minutes. Notes: " + Visit.CaregiverNotes. (Option B real: Run ChatCompletion with the visit facts, Summary = If(ChatCompletion.Success, ChatCompletion.ResponseText, <faked fallback>).)',
+              'Run **SA_UpdateVisitSummary** (VisitId = CareVisitId, AIGeneratedSummary = Summary).',
+              '— NODE 5: publish + output —',
+              'Run **SA_PublishEvent** (ExchangeName="CareConnect", RoutingKey="VisitCompleted", Payload = a JSON text with the visit id). Then Assign **Success = True** → End.',
+              'IMPORTANT: there is NO payment action in this flow. The payment stays Held until the family confirms in Phase B.',
+            ],
+            tip: 'This is essentially the FIRST HALF of your old SA_ConfirmAndRelease (everything up to and including the AI summary), minus the payment release. If you prefer, copy those nodes out of SA_ConfirmAndRelease into here.',
+          },
+          {
+            title: 'Expose SA_DoCompleteVisit as REST',
+            instructions: [
+              'CC_Orchestration > Integrations > REST > your **CareVisit** API > **Add REST API Method** > Name **CompleteVisit**, POST.',
+              'Create body Structure **CompleteVisitRequest** (CareVisitId Long Integer, CaregiverNotes Text, ProofPhotoFile Text, ProofPhotoFileName Text). Input Request = CompleteVisitRequest, Receive In = Body.',
+              'Output: a Response structure with Success (Boolean).',
+              'Flow: Start → Run **SA_DoCompleteVisit** (map Request.* → inputs) → Assign Response.Success = SA_DoCompleteVisit.Success → End.',
+              'The caregiver UI calls **POST /CC_Orchestration/rest/CareVisit/CompleteVisit** (flat body).',
+            ],
+          },
+        ],
+      },
+      {
+        id: '14.3',
+        title: 'PHASE B — trim SA_ConfirmAndRelease to the family half',
+        summary: 'Remove the completion nodes (now in Phase A); keep only confirm + release + rating.',
+        steps: [
+          {
+            title: 'Edit SA_ConfirmAndRelease — remove the completion half',
+            instructions: [
+              'Open **CC_Orchestration > SA_ConfirmAndRelease**. DELETE the nodes that now belong to Phase A:',
+              '   • the proof-photo If + SA_UploadToS3 (the photo was uploaded at completion)',
+              '   • the **SA_CompleteCareVisit** node (the visit was already completed in Phase A)',
+              '   • the AI-summary Assign + SA_UpdateVisitSummary (summary was generated in Phase A)',
+              'Reconnect the flow so it goes straight from Start into the release sequence.',
+            ],
+            important:
+              'Keep the SA_GetCareVisitById node IF the release still needs visit facts (e.g. CaregiverId for the rating). You only remove the COMPLETION nodes, not the read you rely on.',
+          },
+          {
+            title: 'What SA_ConfirmAndRelease should contain after trimming (node by node)',
+            instructions: [
+              'INPUT: keep **CareVisitId** (Long Integer). (Optionally add CaregiverNotes etc. — but the family is confirming, not re-entering notes, so CareVisitId alone is enough.)',
+              '— NODE 1: mark family-confirmed —',
+              'Run **SA_ConfirmCareVisit** (VisitId = CareVisitId) — the atomic that sets FamilyConfirmed=True, FamilyConfirmedAt. (You already built this action.)',
+              '— NODE 2: fetch visit + payment —',
+              'Run **SA_GetCareVisitById** (VisitId = CareVisitId) → Assign Visit = .Result (for CaregiverId).',
+              'Run **SA_GetPaymentByVisitId** (VisitId = CareVisitId) → Assign Pay = .Result.',
+              '— NODE 3: compute the split —',
+              'Declare Decimal locals PayoutAmount, CommissionAmount. Assign: PayoutAmount = Round(Pay.Amount * (1 - Site.CommissionRate), 2); CommissionAmount = Pay.Amount - PayoutAmount.',
+              '— NODE 4: transfer (stub) —',
+              'Run **SA_CreateTransfer** (AmountCents = DecimalToInteger(Round(PayoutAmount*100)), Currency="sgd", DestinationAccountId="", Description="payout visit " + LongIntegerToText(CareVisitId)).',
+              '— NODE 5: release the payment —',
+              'Run **SA_ReleasePayment** (VisitId = CareVisitId, CommissionAmount, PayoutAmount, StripeTransferId = SA_CreateTransfer.TransferId) → Status=Released. (Guard: only release a Held payment.)',
+              '— NODE 6: rating + publish + output —',
+              'Run **SA_UpdateCaregiverRating** (CaregiverId = LongIntegerToIdentifier(Visit.CaregiverId)).',
+              'Run **SA_PublishEvent** (RoutingKey="VisitConfirmed"). Assign Success = True → End.',
+            ],
+            tip: 'This is the SECOND HALF of your old flow. The exposed ConfirmAndRelease endpoint and its CareVisitId body stay the same — only WHO calls it changes (now the family, after the caregiver completed).',
+          },
+          {
+            title: 'Guard: only confirm a Completed-but-not-yet-confirmed visit',
+            instructions: [
+              'Optionally, at the top of SA_ConfirmAndRelease, add an If on the visit: only proceed if the visit is Completed AND not already FamilyConfirmed (prevents double-release). Read it from SA_GetCareVisitById.Result.Status / .FamilyConfirmed. FALSE → raise a clean exception "Visit not ready for confirmation".',
+            ],
+          },
+        ],
+      },
+      {
+        id: '14.4',
+        title: 'Test the two-phase flow',
+        summary: 'Caregiver completes → payment STILL Held → family confirms → payment Released.',
+        steps: [
+          {
+            title: 'Test sequence',
+            instructions: [
+              '1. Book + match a visit (as before) → payment Held, visit Scheduled.',
+              '2. PHASE A: call **POST /CareVisit/CompleteVisit** {CareVisitId, CaregiverNotes, "", ""} → visit Status=Completed, AI summary set. VERIFY the Payment is STILL **Held** (not released yet) — this is the whole point.',
+              '3. PHASE B: call **POST /CareVisit/ConfirmAndRelease** {CareVisitId} → Payment flips to **Released** with CommissionAmount/PayoutAmount; Visit.FamilyConfirmed=True.',
+              '4. Negative: calling ConfirmAndRelease BEFORE CompleteVisit (visit still Scheduled) should be rejected by the Node-3 guard.',
+            ],
+            tip: 'Inspect with the atomic reads: GET /CareConnect_CareVisit/rest/CareVisit/GetCareVisitById?VisitId= (Status, FamilyConfirmed) and /rest/Payment/GetPaymentByVisitId?VisitId= (Status Held vs Released). The KEY assertion vs the old flow: after Phase A the payment is HELD, not Released.',
+          },
+        ],
+      },
+    ],
+  },
 ]
