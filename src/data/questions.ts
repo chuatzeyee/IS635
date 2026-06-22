@@ -3620,4 +3620,162 @@ export const questions: readonly Question[] = [
     ],
     correctIndex: 1,
   },
+
+  // ── Session 10: deeper / scenario questions ──────────────────────
+  {
+    id: 298,
+    session: 10,
+    question:
+      "A SaaS HR app serves 50 client companies. Each company must see only its own employees, with the same code base. Which OutSystems feature directly enables this?",
+    options: [
+      "Site Properties per screen",
+      "Setting the module's IsMultitenant property to Yes",
+      "A separate module per client",
+      "Static Entities for each company",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 299,
+    session: 10,
+    question:
+      "In a multitenant module, which of these is automatically isolated per tenant WITHOUT extra developer work?",
+    options: [
+      "Only Entities",
+      "Entities, Site Properties, and Timers",
+      "Only end-user accounts",
+      "Screens and UI flows",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 300,
+    session: 10,
+    question:
+      "A developer calls Tenant_SwitchContext to switch a background process to another tenant. What key side effect must they account for?",
+    options: [
+      "The database is locked for all tenants",
+      "The session is cleared — an implicit logout — before the tenant changes",
+      "All timers stop running",
+      "The module recompiles automatically",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 301,
+    session: 10,
+    question:
+      "Two agents open the same customer record. Agent A saves a phone change; then Agent B saves an address change to their older copy. Under OutSystems' DEFAULT (No Concurrency) behaviour, what happens?",
+    options: [
+      "Agent B gets an error and must re-fetch",
+      "Agent B's save silently overwrites Agent A's change (last write wins)",
+      "Both changes merge automatically",
+      "The record locks until Agent A logs out",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 302,
+    session: 10,
+    question:
+      "You want users WARNED when they save a record someone else already changed since they fetched it — but you don't want to lock records. Which model fits?",
+    options: [
+      "No Concurrency",
+      "Optimistic (or Versioned) Concurrency",
+      "Pessimistic Concurrency",
+      "Generic Locking only",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 303,
+    session: 10,
+    question:
+      "What is the practical difference between Optimistic and Versioned concurrency in the blog example?",
+    options: [
+      "Optimistic locks the row; Versioned does not",
+      "Optimistic compares the current stored values; Versioned compares a version number that auto-increments on each save",
+      "They are identical",
+      "Versioned works only for static entities",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 304,
+    session: 10,
+    question:
+      "An invoicing system must generate unique, gapless, consecutive invoice numbers under heavy concurrent load. Which model is required?",
+    options: [
+      "No Concurrency",
+      "Optimistic Concurrency",
+      "Pessimistic Concurrency (locking the record while generating the number)",
+      "Versioned Concurrency",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 305,
+    session: 10,
+    question:
+      "Why does Optimistic/Versioned concurrency NOT solve the gapless invoice-number problem?",
+    options: [
+      "It locks too many records",
+      "It only detects a conflict at save time — by then two transactions may have already read the same 'next number'",
+      "It cannot be used with numbers",
+      "It requires multitenancy to be enabled",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 306,
+    session: 10,
+    question:
+      "In the Generic Locking (Pessimistic) pattern, what does a 'Resource' represent?",
+    options: [
+      "A physical server",
+      "Any logic flow placed between the Lock and Unlock actions (e.g. a product listing being edited)",
+      "A database table only",
+      "A user session token",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 307,
+    session: 10,
+    question:
+      "Using the Forge Pessimistic Concurrency plugin, a second user tries to edit a record already locked by someone else. Expected behaviour?",
+    options: [
+      "Their edit silently overwrites the first user's",
+      "They see a message like 'currently locked by another user, try again later' and are blocked until it's unlocked",
+      "The record is duplicated for them",
+      "The system switches to Optimistic mode",
+    ],
+    correctIndex: 1,
+  },
+  {
+    id: 308,
+    session: 10,
+    question:
+      "A money-transfer flow does: Select-for-Update sender, Select-for-Update receiver, debit sender, credit receiver, then Commit. Which concurrency approach is this?",
+    options: [
+      "Optimistic Concurrency",
+      "No Concurrency",
+      "Pessimistic Concurrency",
+      "Versioned Concurrency",
+    ],
+    correctIndex: 2,
+  },
+  {
+    id: 309,
+    session: 10,
+    question:
+      "Which statement best captures the trade-off when choosing a concurrency model?",
+    options: [
+      "Pessimistic is always best because it prevents all conflicts",
+      "Stricter models (Pessimistic) give stronger guarantees but reduce throughput by locking; lighter models (Optimistic) allow more parallelism but require conflict handling",
+      "Optimistic is always best because it never errors",
+      "The model choice has no performance impact",
+    ],
+    correctIndex: 1,
+  },
 ]
