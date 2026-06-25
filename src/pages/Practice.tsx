@@ -293,6 +293,12 @@ export default function Practice() {
                   {q.options[q.correctIndex]}
                 </p>
               )}
+              {revealed && q.explanation && (
+                <p className="mt-2 text-sm text-ink-secondary bg-raised border border-edge rounded-lg px-3 py-2 animate-fade-in">
+                  <span className="font-semibold text-ink">Why: </span>
+                  {q.explanation}
+                </p>
+              )}
             </div>
           )
         })}
