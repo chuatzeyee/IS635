@@ -23,27 +23,6 @@ export const questions: readonly Question[] = [
     correctIndex: 1,
   },
   {
-    id: 2,
-    session: 1,
-    question:
-      "According to Gartner, by the close of 2028, Agentic AI will be implemented via enterprise LCAPs in how many businesses globally?",
-    options: ["1 out of 5", "2 out of 5", "3 out of 5", "4 out of 5"],
-    correctIndex: 3,
-  },
-  {
-    id: 3,
-    session: 1,
-    question:
-      "Compared to traditional coding, how many developers are typically needed for a low-code project of the same size?",
-    options: [
-      "Half as many",
-      "Approximately one-third",
-      "The same number",
-      "Twice as many",
-    ],
-    correctIndex: 1,
-  },
-  {
     id: 4,
     session: 1,
     question:
@@ -69,19 +48,6 @@ export const questions: readonly Question[] = [
     correctIndex: 2,
   },
   {
-    id: 6,
-    session: 1,
-    question:
-      "Which of the following is NOT a use case for enterprise LCAPs identified by Gartner?",
-    options: [
-      "Line-of-business software development",
-      "Modernization of legacy business applications",
-      "Replacing operating systems",
-      "Internal company processes and digital workplaces",
-    ],
-    correctIndex: 2,
-  },
-  {
     id: 7,
     session: 1,
     question:
@@ -93,18 +59,6 @@ export const questions: readonly Question[] = [
       "Build, Deploy, Run",
     ],
     correctIndex: 1,
-  },
-  {
-    id: 8,
-    session: 1,
-    question: "Enterprise LCAP licensing is typically:",
-    options: [
-      "Free for all organizations",
-      "Affordable for startups",
-      "Very expensive (large orgs can pay more than US$1M annually)",
-      "Pay-per-use with no minimum",
-    ],
-    correctIndex: 2,
   },
   {
     id: 9,
@@ -140,32 +94,6 @@ export const questions: readonly Question[] = [
     correctIndex: 2,
   },
   {
-    id: 12,
-    session: 1,
-    question:
-      "Gartner defines LCAP platforms as using which development approach?",
-    options: [
-      "Waterfall development",
-      "Agile development only",
-      "Model-driven development tools, generative AI, and prebuilt component catalogs",
-      "Test-driven development",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 13,
-    session: 1,
-    question:
-      "Which of these is a MANDATORY feature of enterprise LCAPs according to Gartner?",
-    options: [
-      "Blockchain integration",
-      "Visual development tools and IDEs with minimal coding",
-      "Quantum computing support",
-      "Virtual reality interfaces",
-    ],
-    correctIndex: 1,
-  },
-  {
     id: 14,
     session: 1,
     question: "Which of these is a COMMON (not mandatory) feature of LCAPs?",
@@ -187,31 +115,6 @@ export const questions: readonly Question[] = [
       "Citizen Application Development Platform (CADP) market",
       "CRM Platform market",
       "Cloud Infrastructure market",
-    ],
-    correctIndex: 1,
-  },
-  {
-    id: 16,
-    session: 1,
-    question: "What differentiates LCAP from CADP?",
-    options: [
-      "LCAPs are cheaper",
-      "Target audience and complexity of applications built on the platform",
-      "LCAPs only support mobile apps",
-      "CADPs are enterprise-grade",
-    ],
-    correctIndex: 1,
-  },
-  {
-    id: 17,
-    session: 1,
-    question:
-      "In the Gartner LCAP market, which trend is described as the most prominent market catalyst?",
-    options: [
-      "Cloud migration",
-      "Generative AI",
-      "Blockchain integration",
-      "IoT development",
     ],
     correctIndex: 1,
   },
@@ -391,42 +294,6 @@ export const questions: readonly Question[] = [
     correctIndex: 1,
   },
   {
-    id: 34,
-    session: 1,
-    question:
-      "In which quadrant of the Gartner Magic Quadrant (Apr 2025) is OutSystems placed?",
-    options: ["Challenger", "Visionary", "Leader", "Niche Player"],
-    correctIndex: 2,
-  },
-  {
-    id: 35,
-    session: 1,
-    question:
-      "Which of the following is NOT a Leader in the Gartner LCAP Magic Quadrant (Apr 2025)?",
-    options: ["Microsoft", "Salesforce", "Oracle", "ServiceNow"],
-    correctIndex: 2,
-  },
-  {
-    id: 36,
-    session: 1,
-    question:
-      "Oracle is classified as which type of vendor in the Gartner LCAP Magic Quadrant?",
-    options: ["Leader", "Challenger", "Visionary", "Niche Player"],
-    correctIndex: 1,
-  },
-  {
-    id: 37,
-    session: 1,
-    question: "What is Oracle's LCAP offering called?",
-    options: [
-      "Oracle Cloud Builder",
-      "Oracle APEX",
-      "Oracle Low Code Studio",
-      "Oracle App Engine",
-    ],
-    correctIndex: 1,
-  },
-  {
     id: 38,
     session: 1,
     question: "What is Microsoft's LCAP offering called?",
@@ -435,75 +302,6 @@ export const questions: readonly Question[] = [
       "Microsoft App Studio",
       "Power Platform (Power Apps, Power Automate, Copilot Studio, Dataverse)",
       "Microsoft Low Code Suite",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 39,
-    session: 1,
-    question: "What is Mendix's parent company?",
-    options: ["Microsoft", "Siemens", "SAP", "IBM"],
-    correctIndex: 1,
-  },
-  {
-    id: 40,
-    session: 1,
-    question: "Which vendor's LCAP offering is Pega Infinity?",
-    options: ["SAP", "Salesforce", "Pegasystems", "ServiceNow"],
-    correctIndex: 2,
-  },
-  {
-    id: 41,
-    session: 1,
-    question: "SAP's LCAP offering is called:",
-    options: [
-      "SAP Creator",
-      "SAP App Engine",
-      "SAP Build",
-      "SAP Low Code Studio",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 42,
-    session: 1,
-    question: "Which quadrant is SAP placed in?",
-    options: ["Leader", "Challenger", "Visionary", "Niche Player"],
-    correctIndex: 2,
-  },
-  {
-    id: 43,
-    session: 1,
-    question: "Which TWO vendors are Niche Players in the Gartner MQ?",
-    options: [
-      "Oracle and Zoho",
-      "SAP and Pegasystems",
-      "Retool and Creatio",
-      "Appian and ServiceNow",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 44,
-    session: 1,
-    question: "The Y-axis of the Gartner Magic Quadrant represents:",
-    options: [
-      "Completeness of Vision",
-      "Market Share",
-      "Ability to Execute",
-      "Customer Satisfaction",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 45,
-    session: 1,
-    question: "The X-axis of the Gartner Magic Quadrant represents:",
-    options: [
-      "Ability to Execute",
-      "Revenue Growth",
-      "Completeness of Vision",
-      "Number of Customers",
     ],
     correctIndex: 2,
   },
@@ -570,43 +368,6 @@ export const questions: readonly Question[] = [
     correctIndex: 2,
   },
   {
-    id: 51,
-    session: 1,
-    question:
-      "What is the minimum LCAP revenue for inclusion in the Gartner MQ (one of the size requirements)?",
-    options: [
-      "$10 million",
-      "$25 million",
-      "$60 million (with 100+ enterprise customers)",
-      "$100 million",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 52,
-    session: 1,
-    question:
-      "To qualify for the Gartner MQ, vendors must have direct customers in at least how many geographies?",
-    options: ["2", "3", "5", "7"],
-    correctIndex: 1,
-  },
-  {
-    id: 53,
-    session: 1,
-    question:
-      "Which vendor was dropped from the Magic Quadrant because the LCAP product must be publicly available?",
-    options: ["Retool", "Newgen", "Zoho", "Creatio"],
-    correctIndex: 1,
-  },
-  {
-    id: 54,
-    session: 1,
-    question:
-      "No vendors were added to the 2025 Magic Quadrant. Which vendor was DROPPED?",
-    options: ["Retool", "Creatio", "Newgen", "Pegasystems"],
-    correctIndex: 2,
-  },
-  {
     id: 55,
     session: 1,
     question: "ServiceNow's LCAP offering is called:",
@@ -617,27 +378,6 @@ export const questions: readonly Question[] = [
       "Now Platform Builder",
     ],
     correctIndex: 2,
-  },
-  {
-    id: 56,
-    session: 1,
-    question:
-      "Appian's LCAP platform includes which of these AI-related features?",
-    options: [
-      "Maia AI",
-      "Einstein AI",
-      "AI Copilot and Agent Studio",
-      "Copilot Studio",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 57,
-    session: 1,
-    question:
-      "Which vendor's LCAP is ONLY available as a vendor-managed cloud service (PaaS)?",
-    options: ["OutSystems", "Microsoft", "Salesforce", "Appian"],
-    correctIndex: 1,
   },
   {
     id: 58,
@@ -651,26 +391,6 @@ export const questions: readonly Question[] = [
     session: 1,
     question: "How many paying customers does Zoho Creator have?",
     options: ["5,000+", "10,000+", "20,000+", "50,000+"],
-    correctIndex: 2,
-  },
-  {
-    id: 60,
-    session: 1,
-    question:
-      "Salesforce's agentic AI feature for AI orchestration is called:",
-    options: [
-      "Einstein Bot",
-      "Salesforce Copilot",
-      "Agentforce",
-      "Salesforce Agent Builder",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 61,
-    session: 1,
-    question: "Mendix's AI assistant is called:",
-    options: ["Einstein", "Copilot", "Maia AI", "Agent Studio"],
     correctIndex: 2,
   },
   {
@@ -700,13 +420,6 @@ export const questions: readonly Question[] = [
     correctIndex: 1,
   },
   {
-    id: 64,
-    session: 1,
-    question: "Which vendor integrates with Slack, Tableau, and MuleSoft?",
-    options: ["Microsoft", "Salesforce", "OutSystems", "Appian"],
-    correctIndex: 1,
-  },
-  {
     id: 65,
     session: 1,
     question: "Retool primarily targets:",
@@ -715,47 +428,6 @@ export const questions: readonly Question[] = [
       "Internal app development",
       "Mobile-only applications",
       "Government applications",
-    ],
-    correctIndex: 1,
-  },
-  {
-    id: 66,
-    session: 1,
-    question:
-      "Which Gartner publication year is the Magic Quadrant report used in this course?",
-    options: ["2023", "2024", "2025 (July 2025)", "2026"],
-    correctIndex: 2,
-  },
-  {
-    id: 67,
-    session: 1,
-    question:
-      "Zoho is classified as which type of vendor in the Gartner MQ?",
-    options: ["Leader", "Challenger", "Visionary", "Niche Player"],
-    correctIndex: 1,
-  },
-  {
-    id: 68,
-    session: 1,
-    question:
-      "In Singapore, which organizations require new applications to be developed using LCAP?",
-    options: [
-      "Only banks",
-      "Only telecommunications companies",
-      "All government agencies",
-      "Only large MNCs",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 69,
-    session: 1,
-    question: "Which Singapore telcos are mentioned as using LCAP?",
-    options: [
-      "StarHub and M1",
-      "SingTel and StarHub",
-      "SingTel and M1",
-      "All three telcos",
     ],
     correctIndex: 1,
   },
@@ -842,31 +514,6 @@ export const questions: readonly Question[] = [
     correctIndex: 2,
   },
   {
-    id: 77,
-    session: 1,
-    question: "In Singapore, which organizations use OutSystems?",
-    options: [
-      "Only private companies",
-      "Only banks",
-      "Government agencies, banks, and SMU",
-      "Only educational institutions",
-    ],
-    correctIndex: 2,
-  },
-  {
-    id: 78,
-    session: 1,
-    question:
-      "Where is LCAP positioned in Gartner's 2023 Impact Radar?",
-    options: [
-      "Data Analytics category",
-      "Software Engineering category",
-      "Cloud Infrastructure category",
-      "Cybersecurity category",
-    ],
-    correctIndex: 1,
-  },
-  {
     id: 79,
     session: 1,
     question: "What are the four layers of OutSystems Designer Studio?",
@@ -950,18 +597,6 @@ export const questions: readonly Question[] = [
       "Useful wrapper services reusable in term projects",
       "A grading rubric",
       "A database management tool",
-    ],
-    correctIndex: 1,
-  },
-  {
-    id: 86,
-    session: 1,
-    question: "Why is LCAP licensing a barrier for startups?",
-    options: [
-      "It requires Java expertise",
-      "Very expensive enterprise licensing",
-      "It only runs on Linux",
-      "It needs dedicated hardware",
     ],
     correctIndex: 1,
   },
@@ -3821,32 +3456,6 @@ export const questions: readonly Question[] = [
     explanation: "The Processes Layer example describes message subscription via a RabbitMQ broker every 100ms.",
   },
   {
-    id: 313,
-    session: 1,
-    question: "A platform offers visual IDEs and AI-assisted development but lacks 'data virtualization for complex distributed data architectures.' Per Gartner, can it still qualify as an LCAP?",
-    options: [
-      "Yes, but only for mobile apps",
-      "No, because AI-assisted development is optional",
-      "Yes, because data virtualization is only a common feature",
-      "No, because data virtualization is a mandatory LCAP feature",
-    ],
-    correctIndex: 3,
-    explanation: "Data virtualization for complex distributed data architectures is on Gartner's Mandatory LCAP Features list, so missing it disqualifies the platform.",
-  },
-  {
-    id: 314,
-    session: 1,
-    question: "Which of the following is a COMMON (not mandatory) LCAP feature according to Gartner?",
-    options: [
-      "B2B and ISV use cases with multitenancy",
-      "Security features such as IAM and threat protection",
-      "Visual development tools and IDEs with minimal coding",
-      "Integrated runtime environment for applications",
-    ],
-    correctIndex: 0,
-    explanation: "B2B/ISV use cases with multitenancy is a Common LCAP feature, whereas security/IAM, visual IDEs, and integrated runtime are mandatory features.",
-  },
-  {
     id: 315,
     session: 1,
     question: "Which software engineering principle is mapped to the REST API / Swagger documentation between frontend and backend?",
@@ -3990,19 +3599,6 @@ export const questions: readonly Question[] = [
     explanation: "Some SMULab Wrapper Services require an API Key registered for the project team.",
   },
   {
-    id: 326,
-    session: 1,
-    question: "In which Gartner publication and category was LCAP positioned in August 2023?",
-    options: [
-      "Magic Quadrant, Cloud Platforms",
-      "Hype Cycle, Emerging Technologies",
-      "Market Guide, Citizen Development",
-      "Impact Radar, Software Engineering category",
-    ],
-    correctIndex: 3,
-    explanation: "The Gartner Impact Radar (Aug 2023) placed LCAP in the Software Engineering category.",
-  },
-  {
     id: 327,
     session: 1,
     question: "A startup wants to adopt an enterprise LCAP. Per the syllabus, what is the main obstacle?",
@@ -4014,45 +3610,6 @@ export const questions: readonly Question[] = [
     ],
     correctIndex: 0,
     explanation: "Enterprise LCAP licensing is very expensive ($1M+ annually), which startups cannot afford.",
-  },
-  {
-    id: 328,
-    session: 1,
-    question: "Which statement about CADP vs LCAP is TRUE per the syllabus?",
-    options: [
-      "CADP and LCAP are identical markets",
-      "LCAP targets citizen developers and simpler use cases",
-      "LCAP targets professional developers and enterprise apps",
-      "CADP targets professional developers and enterprise apps",
-    ],
-    correctIndex: 2,
-    explanation: "LCAP targets professional developers and enterprise apps, while CADP targets citizen developers and simpler use cases.",
-  },
-  {
-    id: 329,
-    session: 1,
-    question: "By 2028, Gartner predicts Agentic AI will appear in enterprise LCAPs in how many businesses globally?",
-    options: [
-      "5 out of 5",
-      "4 out of 5",
-      "2 out of 5",
-      "3 out of 5",
-    ],
-    correctIndex: 1,
-    explanation: "By 2028, Gartner predicts Agentic AI in enterprise LCAPs in 4 out of 5 businesses globally.",
-  },
-  {
-    id: 330,
-    session: 1,
-    question: "Which of the following is NOT a Gartner-identified use case for enterprise LCAPs?",
-    options: [
-      "Modernization/augmentation of legacy business applications",
-      "Line-of-business software development",
-      "Replacing operating systems",
-      "Internal company processes and digital workplaces",
-    ],
-    correctIndex: 2,
-    explanation: "Gartner explicitly states LCAP is NOT for replacing operating systems; the other three are listed use cases.",
   },
   {
     id: 331,
@@ -4094,175 +3651,6 @@ export const questions: readonly Question[] = [
     explanation: "The LCAP GUI designer studio is defined by drag-n-drop, connect, and configure components.",
   },
   {
-    id: 334,
-    session: 1,
-    question: "What is OutSystems' newer-generation platform name and its event bus technology mentioned in the vendor details?",
-    options: [
-      "App Engine, NATS-based event bus",
-      "Power Platform, RabbitMQ-based event bus",
-      "OutSystems Developer Cloud (ODC), NATS-based event bus",
-      "Studio Pro, Kafka-based event bus",
-    ],
-    correctIndex: 2,
-    explanation: "OutSystems' newer-generation platform is OutSystems Developer Cloud (ODC) with a NATS-based event bus.",
-  },
-  {
-    id: 335,
-    session: 1,
-    question: "Which vendor's LCAP is described as PaaS only (no self-hosted option)?",
-    options: [
-      "Mendix",
-      "Microsoft (Power Platform)",
-      "OutSystems",
-      "Oracle (APEX)",
-    ],
-    correctIndex: 1,
-    explanation: "Microsoft Power Platform is PaaS only, with no self-hosted option.",
-  },
-  {
-    id: 336,
-    session: 1,
-    question: "Oracle's LCAP offering, Oracle APEX, is distinctive because it is:",
-    options: [
-      "Only available as a mobile app builder",
-      "Owned by Siemens",
-      "Embedded in Oracle Database at no extra cost",
-      "The most expensive LCAP on the market",
-    ],
-    correctIndex: 2,
-    explanation: "Oracle APEX is embedded in Oracle Database at no extra cost.",
-  },
-  {
-    id: 337,
-    session: 1,
-    question: "Mendix, a Leader in the Magic Quadrant, is a subsidiary of which company?",
-    options: [
-      "Microsoft",
-      "SAP",
-      "Salesforce",
-      "Siemens",
-    ],
-    correctIndex: 3,
-    explanation: "Mendix is a Siemens subsidiary.",
-  },
-  {
-    id: 338,
-    session: 1,
-    question: "Which vendor pairs with 'Data Fabric' and an 'Agent Studio' in the syllabus vendor details?",
-    options: [
-      "Pegasystems",
-      "Appian",
-      "ServiceNow",
-      "Salesforce",
-    ],
-    correctIndex: 1,
-    explanation: "Appian (Leader) is listed with Appian Designer, Data Fabric, AI Copilot, and Agent Studio.",
-  },
-  {
-    id: 339,
-    session: 1,
-    question: "Which vendor is matched with 'Now Assist' and a 'GenAI-native ServiceNow Studio'?",
-    options: [
-      "Salesforce",
-      "ServiceNow",
-      "Microsoft",
-      "Oracle",
-    ],
-    correctIndex: 1,
-    explanation: "ServiceNow (Leader) is listed with App Engine, Now Assist, and GenAI-native ServiceNow Studio.",
-  },
-  {
-    id: 340,
-    session: 1,
-    question: "In the Gartner Magic Quadrant (Apr 2025), which TWO vendors are the Visionaries?",
-    options: [
-      "Oracle and Zoho",
-      "Retool and Creatio",
-      "SAP and Pegasystems",
-      "OutSystems and Mendix",
-    ],
-    correctIndex: 2,
-    explanation: "In the Apr 2025 Magic Quadrant the Visionaries are SAP and Pegasystems.",
-  },
-  {
-    id: 341,
-    session: 1,
-    question: "Regarding changes to the 2025 Magic Quadrant, which statement is correct?",
-    options: [
-      "Newgen was dropped and no vendors were added",
-      "No changes were made versus the prior year",
-      "Two new vendors were added and none dropped",
-      "Retool was dropped and Newgen was added",
-    ],
-    correctIndex: 0,
-    explanation: "Newgen was dropped (product must be publicly available) and no vendors were added in the 2025 MQ.",
-  },
-  {
-    id: 342,
-    session: 1,
-    question: "Which describes a Challenger in the Gartner Magic Quadrant?",
-    options: [
-      "Focused on a narrow niche market",
-      "Good vision but unproven execution",
-      "Strong execution but lack the vision of Leaders",
-      "Both strong execution AND strong vision",
-    ],
-    correctIndex: 2,
-    explanation: "Challengers have strong execution but lack the vision of Leaders.",
-  },
-  {
-    id: 343,
-    session: 1,
-    question: "For the Magic Quadrant 'Completeness of Vision' axis, which TWO criteria carry HIGH weight?",
-    options: [
-      "Customer Experience and Operations",
-      "Market Understanding and Innovation",
-      "Sales Strategy and Geographic Strategy",
-      "Product or Service and Overall Viability",
-    ],
-    correctIndex: 1,
-    explanation: "For Completeness of Vision, Market Understanding and Innovation carry HIGH weight.",
-  },
-  {
-    id: 344,
-    session: 1,
-    question: "Which is one of the size/eligibility requirements for inclusion in the Gartner LCAP Magic Quadrant?",
-    options: [
-      "Minimum $10M revenue with 50+ customers",
-      "Minimum $60M LCAP revenue with 100+ enterprise customers",
-      "Minimum $100M revenue with 500+ customers",
-      "Minimum $25M revenue with 10+ customers",
-    ],
-    correctIndex: 1,
-    explanation: "Inclusion requires a minimum of $60M LCAP revenue with 100+ enterprise customers.",
-  },
-  {
-    id: 345,
-    session: 1,
-    question: "To qualify for the Gartner MQ, a vendor must have direct customers in at least how many geographies?",
-    options: [
-      "2",
-      "5",
-      "3",
-      "1",
-    ],
-    correctIndex: 2,
-    explanation: "A vendor must have direct customers in at least 3 geographies.",
-  },
-  {
-    id: 346,
-    session: 1,
-    question: "Which requirement caused Newgen to be dropped from the 2025 Magic Quadrant?",
-    options: [
-      "It earned less than $60M revenue",
-      "It had fewer than 3 geographies",
-      "It lacked AI-assisted development",
-      "Its LCAP product was not publicly available",
-    ],
-    correctIndex: 3,
-    explanation: "Newgen was dropped because the LCAP product must be publicly available.",
-  },
-  {
     id: 347,
     session: 1,
     question: "The OutSystems Associate Developer Certification exam consists of:",
@@ -4300,19 +3688,6 @@ export const questions: readonly Question[] = [
     ],
     correctIndex: 1,
     explanation: "SMU IT apps built with OutSystems include Purchase Order Justification, PGP Admissions, Facilities Booking, and Conflict of Interest.",
-  },
-  {
-    id: 350,
-    session: 1,
-    question: "Which Singapore telcos are cited as LCAP users in the syllabus?",
-    options: [
-      "SingTel and M1",
-      "M1 and StarHub",
-      "StarHub and Circles.Life",
-      "SingTel and StarHub",
-    ],
-    correctIndex: 3,
-    explanation: "The Singapore telcos cited as LCAP users are SingTel and StarHub.",
   },
 
   // ── Session 2: Architecture Best Practices (verified bank) ──
