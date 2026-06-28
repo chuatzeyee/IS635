@@ -359,6 +359,89 @@ export const certNotes: readonly CertNote[] = [
     ],
   },
   {
+    id: 'forms-validation',
+    title: 'Forms, Validation & Widget States',
+    summary: 'Form.Valid, Input.Valid / ValidationMessage, mandatory fields, and how validation runs.',
+    blocks: [
+      {
+        kind: 'text',
+        text: 'A **Form** widget groups inputs and exposes runtime **state** you read in logic to decide whether to save. The two you must know: **`Form.Valid`** (Boolean — is every input in the form currently valid?) and each input\'s **`.Valid`** + **`.ValidationMessage`**. These are runtime properties on the widget, not data attributes.',
+      },
+      {
+        kind: 'table',
+        table: {
+          headers: ['State / property', 'On what', 'Meaning'],
+          rows: [
+            ['Valid', 'Form and each Input', 'Boolean — true if the field/whole form passes validation'],
+            ['ValidationMessage', 'each Input (and Form)', 'Text shown under the field when Valid = False'],
+            ['Mandatory', 'Input', 'If Yes, an empty value auto-fails validation (required field)'],
+            ['Enabled', 'Input / Button', 'Whether the widget accepts interaction'],
+          ],
+        },
+      },
+      {
+        kind: 'text',
+        text: 'The standard save flow — **validate, then check Form.Valid, then save**:',
+      },
+      {
+        kind: 'bullets',
+        items: [
+          'Mandatory inputs validate automatically; for custom rules you set `Input.Valid = False` and `Input.ValidationMessage = "..."` in your logic.',
+          'Built-in client action **`ValidateForm`** runs all the form\'s validations and refreshes each input\'s Valid state.',
+          'After validating, branch on **`Form.Valid`**: if True → run the save (Server Action); if False → stop, the invalid inputs already show their ValidationMessage.',
+          'Validation feedback (red borders + messages) renders **client-side** — no round-trip just to validate. Only the save hits the server.',
+          'A **Button** can have its **Enabled** bound to an expression (e.g. disable Save while a field is empty).',
+        ],
+      },
+      {
+        kind: 'tip',
+        text: 'Save pattern: ValidateForm → If Form.Valid = True → CreateOrUpdate (server) → feedback; else do nothing (messages already shown). Reading Form.Valid BEFORE validating can give a stale result — validate first.',
+      },
+      {
+        kind: 'warn',
+        text: '`Form.Valid` / `Input.Valid` are runtime widget STATES, not Entity attributes — you read them in client logic, you don\'t store them. Marking an input **Mandatory** only blocks empty values; other rules (format, ranges) you enforce by setting `.Valid` + `.ValidationMessage` yourself.',
+      },
+    ],
+  },
+  {
+    id: 'common-widgets',
+    title: 'Common UI Widgets',
+    summary: 'What the core Reactive widgets are for — Container, Input, Link vs Button, List, If, For Each.',
+    blocks: [
+      {
+        kind: 'table',
+        table: {
+          headers: ['Widget', 'Purpose'],
+          rows: [
+            ['Container', 'Layout/grouping box; the building block for structure & styling'],
+            ['Form', 'Groups inputs and exposes Valid / validation for a save flow'],
+            ['Input', 'Bound to a variable/attribute; has Valid, ValidationMessage, Mandatory'],
+            ['Label', 'Caption tied to an input (accessibility + click-to-focus)'],
+            ['Button', 'Triggers an On Click action; has Enabled; Submit vs normal'],
+            ['Link', 'Navigates (to a Screen) or triggers an action; for navigation, not form submit'],
+            ['List', 'Renders a record List, one item template repeated per record'],
+            ['If (widget)', 'Shows one of two UI branches based on a Boolean'],
+            ['For Each (widget)', 'Repeats UI per item of a List (inside a List/Container)'],
+            ['Container/Table', 'Tabular display of records bound to an Aggregate output'],
+          ],
+        },
+      },
+      {
+        kind: 'bullets',
+        items: [
+          '**Link vs Button**: a **Link** is for navigation (go to a Screen) or a lightweight action; a **Button** is the primary action trigger and can be a form Submit. Use a Button to save a Form, a Link to navigate.',
+          '**If widget vs For Each widget** are UI-tree elements (they show/repeat UI) — distinct from the **If / For Each logic nodes** inside an action flow.',
+          '**Events** on widgets (e.g. a Button\'s On Click, an Input\'s On Change) wire UI interactions to Client Actions.',
+          'Most widgets have **Visible** and **Enabled** properties bound to expressions for dynamic UI.',
+        ],
+      },
+      {
+        kind: 'warn',
+        text: 'Don\'t confuse the **If / For Each WIDGETS** (in the screen UI tree, controlling what renders) with the **If / For Each LOGIC nodes** (inside an action flow, controlling execution). Same names, different places.',
+      },
+    ],
+  },
+  {
     id: 'client-server-logic',
     title: 'Client vs Server Actions',
     summary: 'Server = C#/.NET, Client = React/JS — which elements live where.',

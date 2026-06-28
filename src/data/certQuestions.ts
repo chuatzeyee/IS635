@@ -2226,4 +2226,71 @@ export const certQuestions: readonly CertQuestion[] = [
     correctIndex: 2,
     explanation: "Reactive is a single-page app that runs UI logic in the browser and only hits the server for data or server-side logic. Traditional Web did a full-page round-trip on most interactions.",
   },
+
+  // ── Forms & Validation ──
+  {
+    id: 169,
+    domain: "ui-widgets",
+    question: "What does the Form widget's 'Valid' property represent at runtime?",
+    options: [
+      "Whether the Form has been submitted to the server",
+      "A Boolean that is true only when all inputs in the form pass validation",
+      "The number of mandatory fields in the form",
+      "Whether the Form is bound to an Entity",
+    ],
+    correctIndex: 1,
+    explanation: "Form.Valid is a Boolean that is true only when every input in the form currently passes its validation. It is a runtime widget state you read before saving, not a stored attribute.",
+  },
+  {
+    id: 170,
+    domain: "ui-widgets",
+    question: "A developer wants to show a custom error under a specific Input when a business rule fails. Which properties should they set?",
+    options: [
+      "The Input's Valid = False and ValidationMessage = the error text",
+      "The Form's Submitted = True",
+      "The Input's Mandatory = Yes",
+      "The Screen's OnRender flag",
+    ],
+    correctIndex: 0,
+    explanation: "Setting Input.Valid = False together with Input.ValidationMessage displays the custom message under that field. Mandatory only enforces non-empty; it does not express custom rules.",
+  },
+  {
+    id: 171,
+    domain: "ui-widgets",
+    question: "What is the correct order in a typical Save action for a Reactive form?",
+    options: [
+      "Save to the server first, then check Form.Valid",
+      "Run ValidateForm, then if Form.Valid is True call the save Server Action",
+      "Check Form.Valid first, then run ValidateForm",
+      "Disable the form, then save without validating",
+    ],
+    correctIndex: 1,
+    explanation: "You run the form's validation (ValidateForm) to refresh each input's state, then branch on Form.Valid — only saving (a server round-trip) when it is True. Reading Form.Valid before validating can be stale.",
+  },
+  {
+    id: 172,
+    domain: "ui-widgets",
+    question: "Setting an Input's 'Mandatory' property to Yes has what effect?",
+    options: [
+      "It validates the value against a regular expression",
+      "It makes the field fail validation when left empty (required field)",
+      "It saves the field to the database immediately",
+      "It marks the underlying Entity attribute as a primary key",
+    ],
+    correctIndex: 1,
+    explanation: "Mandatory = Yes makes an empty value automatically fail validation, enforcing a required field. It does not check formats/ranges (you set Valid + ValidationMessage for those) and is unrelated to keys.",
+  },
+  {
+    id: 173,
+    domain: "ui-widgets",
+    question: "Which is the most appropriate widget to navigate the user to another Screen (rather than submit a form)?",
+    options: [
+      "A Button with Submit behaviour",
+      "A Link",
+      "A Container",
+      "An Input",
+    ],
+    correctIndex: 1,
+    explanation: "A Link is intended for navigation to a Screen (or a lightweight action). A Button — especially Submit — is the primary trigger for actions like saving a Form.",
+  },
 ]
