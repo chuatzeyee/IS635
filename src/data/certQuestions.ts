@@ -2375,4 +2375,60 @@ export const certQuestions: readonly CertQuestion[] = [
     correctIndex: 2,
     explanation: "Decimal → Integer truncates the fractional part (3.9 → 3), a lossy narrowing conversion. The other three are widening conversions that migrate cleanly.",
   },
+
+  // ── Static Entity referential integrity ──
+  {
+    id: 180,
+    domain: "data-modeling",
+    question: "A regular Entity 'Address' references the Static Entity 'Country'. A developer tries to delete a Country record that an Address still references. What governs this?",
+    options: [
+      "Static Entities ignore referential integrity, so the delete always succeeds",
+      "The reference still has a Delete Rule (default Protect), so the delete is blocked to preserve integrity",
+      "The Address reference is automatically set to null on publish",
+      "The Address record is cascade-deleted automatically",
+    ],
+    correctIndex: 1,
+    explanation: "A Static Entity is a real persisted table, so a reference to it is a foreign key with a Delete Rule (default Protect). 'Static' only means rows are defined at design time — it does not disable referential integrity.",
+  },
+
+  // ── Reactivity: auto-refetch / variable tracking ──
+  {
+    id: 181,
+    domain: "screen-lifecycle",
+    question: "A screen Aggregate filters records using a variable bound to a search box. The user types in the box. What happens?",
+    options: [
+      "Nothing until the page is reloaded",
+      "The Aggregate automatically re-runs because one of its own inputs (the filter variable) changed",
+      "Only the next Create/Update triggers a refresh",
+      "The browser queries the database directly without the server",
+    ],
+    correctIndex: 1,
+    explanation: "An Aggregate reactively depends on the variables used in its filters/sorts, so changing the search variable auto-refetches. (The query still runs on the server — a round-trip — but it is triggered automatically.)",
+  },
+  {
+    id: 182,
+    domain: "screen-lifecycle",
+    question: "A developer saves a new record with a Server Action, but the list on screen (bound to an Aggregate over the same Entity) does not show it. Why, and what fixes it?",
+    options: [
+      "The Aggregate is broken; rebuild it",
+      "Aggregates do not auto-requery on a database write — call Refresh Data on that Aggregate after the save",
+      "Set the Entity to Public = Yes",
+      "Change the Aggregate to a Client Action",
+    ],
+    correctIndex: 1,
+    explanation: "Auto-refetch only tracks an Aggregate's own input variables, not the table's contents. After a Create/Update/Delete you must call Refresh Data to re-query the Entity.",
+  },
+  {
+    id: 183,
+    domain: "screen-lifecycle",
+    question: "Which change updates the UI automatically WITHOUT any explicit refresh?",
+    options: [
+      "Another user inserts a row in the database",
+      "Assigning a new value to a local variable that a widget is bound to",
+      "A record deleted by a different screen",
+      "Appending to a List that no widget is bound to",
+    ],
+    correctIndex: 1,
+    explanation: "Reactive UI re-renders when a bound variable changes, so assigning to a displayed variable updates instantly. Database changes from elsewhere are not tracked by an already-loaded Aggregate, and an unbound List change paints nothing.",
+  },
 ]

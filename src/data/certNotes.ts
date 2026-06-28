@@ -88,6 +88,10 @@ export const certNotes: readonly CertNote[] = [
         kind: 'tip',
         text: 'Memory hook from the child\'s view when the parent dies: Protect = "stop, don\'t delete it"; Delete = "take me with you"; Ignore = "leave me (orphan)."',
       },
+      {
+        kind: 'warn',
+        text: 'A reference to a **Static Entity** still carries a Delete Rule (default Protect) and enforces referential integrity — a Static Entity is a real persisted table, so its FK behaves like any other. "Static" only means the rows are defined at design time; it does NOT disable the Delete Rule. (e.g. you can\'t delete a Country record that an Address still references.)',
+      },
     ],
   },
   {
@@ -542,6 +546,51 @@ export const certNotes: readonly CertNote[] = [
       {
         kind: 'warn',
         text: 'Traditional Web did a **full-page round-trip** on most interactions (every button posted back and reloaded the page). **Reactive Web** is an SPA that only round-trips for data/server logic — the platform\'s headline performance win.',
+      },
+    ],
+  },
+  {
+    id: 'reactivity',
+    title: 'Reactivity: Auto-Refetch & Variable Tracking',
+    summary: 'When the UI re-fetches/recomputes by itself when data changes — and when you must trigger it manually.',
+    blocks: [
+      {
+        kind: 'text',
+        text: 'Reactive Web is "reactive" because the screen **automatically re-renders when a variable it displays changes** — you don\'t manually repaint the UI. But that auto-tracking only covers some things; data already loaded from the database does NOT silently re-query when the DB changes. Knowing the boundary is heavily tested.',
+      },
+      {
+        kind: 'text',
+        text: 'AUTOMATIC — happens without you doing anything:',
+      },
+      {
+        kind: 'bullets',
+        items: [
+          '**UI re-renders when a bound variable changes** — change a Local/Input Variable and any widget/expression showing it updates instantly (in-browser, no round-trip).',
+          '**Aggregate auto-refetches when one of its OWN inputs changes** — if a screen Aggregate\'s filter/sort references a variable (e.g. a search box bound to `SearchText`), editing that variable **re-runs the Aggregate automatically**. Its data source reactively depends on those inputs.',
+          '**A dependent Aggregate/expression recomputes when its source changes** — derived values that reference reactive data re-evaluate.',
+          '**A Block re-runs OnParametersChanged when its parent passes new Input Parameters** — so it can react to new inputs.',
+        ],
+      },
+      {
+        kind: 'text',
+        text: 'NOT automatic — you must trigger it yourself:',
+      },
+      {
+        kind: 'bullets',
+        items: [
+          '**Stale data after a Create/Update/Delete** — an Aggregate fetched its rows once; writing to the same Entity does NOT auto-refresh it. Call **Refresh Data** (on that Aggregate/Data Action) to re-query.',
+          '**Changes made by ANOTHER user / another screen** — the database changed, but your already-loaded Aggregate won\'t know. Re-fetch (Refresh Data) or re-enter the screen.',
+          '**Manually mutating a List variable** (ListAppend/ListRemove on a local copy) — does not write to the DB, and the source Aggregate is unaffected.',
+          '**Plain non-bound logic** — a Server Action result you stored in a variable only updates the UI if a widget is bound to that variable.',
+        ],
+      },
+      {
+        kind: 'tip',
+        text: 'Rule of thumb: changing an Aggregate\'s INPUTS (filter/sort variables) → auto-refetch. Changing the underlying DATA (Create/Update/Delete) → NOT automatic, use Refresh Data. Variable change → UI re-renders if a widget is bound to it.',
+      },
+      {
+        kind: 'warn',
+        text: 'Classic trap: "I saved a record but the list didn\'t update." The Aggregate doesn\'t re-query on a DB write — you must call **Refresh Data** after the Create/Update/Delete. Auto-refetch only tracks the Aggregate\'s own input variables, not the table\'s contents.',
       },
     ],
   },
