@@ -380,6 +380,46 @@ export const certNotes: readonly CertNote[] = [
     ],
   },
   {
+    id: 'round-trips',
+    title: 'Server Round-Trips & Performance',
+    summary: 'A round-trip = browser → server → back. They cost latency, so Reactive minimizes them.',
+    blocks: [
+      {
+        kind: 'text',
+        text: 'A **round-trip** is one complete request from the **browser to the server and back**: the client sends a request, the server does work (queries the DB, runs C# logic), and returns a response. Each round-trip costs **network latency**, so fewer round-trips = a snappier app. Reactive Web keeps most logic in the browser precisely to avoid them.',
+      },
+      {
+        kind: 'table',
+        table: {
+          headers: ['Causes a round-trip (→ server)', 'No round-trip (stays in browser)'],
+          rows: [
+            ['Run Server Action (incl. anything using an Aggregate/SQL/Entity action)', 'Client Action logic: If, Assign, For Each on in-memory data'],
+            ['Fetching data — a screen Aggregate / Data Action loading from the DB', 'Showing a Message; navigating (Destination)'],
+            ['Calling a REST/SOAP integration via a server action', 'Reading a Client Variable or local variable'],
+            ['Refresh Data (re-runs the server query)', 'Client-side validation, UI updates, If-widget toggling'],
+          ],
+        },
+      },
+      {
+        kind: 'bullets',
+        items: [
+          'A **Client Action calling a Server Action** incurs one round-trip for that call.',
+          'A Server Action call **inside a loop** = one round-trip per iteration → slow. Prefer one bulk fetch/send over many small calls.',
+          'Validation messages and show/hide should be **client-side** (no round-trip); hit the server only when you truly need DB/server work.',
+          'Same client/server split as the logic card, viewed through latency: **Aggregate is server-side → fetching it is a round-trip; Message is client-side → no round-trip.**',
+        ],
+      },
+      {
+        kind: 'tip',
+        text: 'Mental model: a round-trip = "the browser has to ask the server and wait." Anything the browser can answer itself (already-loaded data, local logic, UI changes) is NOT a round-trip.',
+      },
+      {
+        kind: 'warn',
+        text: 'Traditional Web did a **full-page round-trip** on most interactions (every button posted back and reloaded the page). **Reactive Web** is an SPA that only round-trips for data/server logic — the platform\'s headline performance win.',
+      },
+    ],
+  },
+  {
     id: 'exceptions',
     title: 'Exception Handling & Debugging',
     summary: 'Scope of an Exception Handler and the catch-all hierarchy.',

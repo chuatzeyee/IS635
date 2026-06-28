@@ -2172,4 +2172,58 @@ export const certQuestions: readonly CertQuestion[] = [
     correctIndex: 1,
     explanation: "Refreshing updates the design-time reference only; the consumer module must be republished via 1-Click Publish for the change to take effect at runtime.",
   },
+
+  // ── Server Round-Trips ──
+  {
+    id: 165,
+    domain: "client-server-logic",
+    question: "In a Reactive Web app, what is a 'server round-trip'?",
+    options: [
+      "A full re-deploy of the module to every environment",
+      "A request that goes from the browser to the server and back with a response",
+      "The browser re-rendering a screen after a variable changes",
+      "Two Screens navigating back and forth",
+    ],
+    correctIndex: 1,
+    explanation: "A round-trip is one complete browser to server to browser request/response cycle (e.g. fetching data or running a Server Action). It costs network latency, unlike purely client-side work.",
+  },
+  {
+    id: 166,
+    domain: "client-server-logic",
+    question: "Which action in a Reactive Web screen causes a server round-trip?",
+    options: [
+      "Showing a Message to the user",
+      "Toggling an If widget's visibility",
+      "Running a Server Action that executes an Aggregate",
+      "Assigning a value to a local variable",
+    ],
+    correctIndex: 2,
+    explanation: "Running a Server Action (which executes server-only logic like an Aggregate) requires a trip to the server. Message, If-widget toggling, and local Assign all run client-side with no round-trip.",
+  },
+  {
+    id: 167,
+    domain: "client-server-logic",
+    question: "A developer calls a Server Action inside a For Each that loops 500 times. Why is this a performance problem?",
+    options: [
+      "Server Actions cannot be used in loops at all",
+      "It creates one server round-trip per iteration, adding latency 500 times",
+      "For Each only works on the server",
+      "It exceeds the maximum number of local variables",
+    ],
+    correctIndex: 1,
+    explanation: "Each Server Action call is a separate round-trip, so looping it 500 times incurs 500 round-trips. Prefer passing the data in bulk and processing it in a single server call.",
+  },
+  {
+    id: 168,
+    domain: "client-server-logic",
+    question: "Why does a Reactive Web app generally feel faster than a Traditional Web app for UI interactions?",
+    options: [
+      "Reactive compiles to C# instead of JavaScript",
+      "Traditional Web caches all data on the client",
+      "Reactive runs most logic client-side and only round-trips for data/server work, avoiding full-page reloads",
+      "Reactive disables all server communication",
+    ],
+    correctIndex: 2,
+    explanation: "Reactive is a single-page app that runs UI logic in the browser and only hits the server for data or server-side logic. Traditional Web did a full-page round-trip on most interactions.",
+  },
 ]
