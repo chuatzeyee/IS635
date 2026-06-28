@@ -8,7 +8,6 @@ import Guides from './pages/Guides'
 import Practice from './pages/Practice'
 import CertExam from './pages/CertExam'
 import Build from './pages/Build'
-import Playbook from './pages/Playbook'
 import HomeTest from './pages/HomeTest'
 import Scripts from './pages/Scripts'
 
@@ -27,7 +26,6 @@ export default function App() {
           <Route path="/practice" element={<Practice />} />
           <Route path="/cert-exam" element={<CertExam />} />
           <Route path="/build" element={<Build />} />
-          <Route path="/playbook" element={<Playbook />} />
           <Route path="/home-test" element={<HomeTest />} />
           <Route path="/scripts" element={<Scripts />} />
         </Routes>

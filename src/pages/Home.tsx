@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom'
-import { BookOpen, List, FileCode2, FlaskConical, Hammer, Rocket, Target, ArrowRight } from 'lucide-react'
+import { BookOpen, List, FileCode2, FlaskConical, Hammer, Target, ArrowRight } from 'lucide-react'
 import { sessions } from '../data/topics'
 import { definitions } from '../data/definitions'
 import { guides } from '../data/guides'
 import { questions } from '../data/questions'
 import { buildPhases } from '../data/buildGuide'
-import { playbookPhases } from '../data/examPlaybook'
 import { homeTestPhases } from '../data/homeTestGuide'
 
 const cards = [
@@ -47,14 +46,6 @@ const cards = [
     title: 'Build Guide',
     description: 'Step-by-step backend build reference for CareConnect',
     count: buildPhases.reduce((sum, p) => sum + p.sections.length, 0),
-    unit: 'sections',
-  },
-  {
-    to: '/playbook',
-    icon: Rocket,
-    title: 'Exam Playbook',
-    description: 'Open-book exam speed reference: first-30-min checklist + layer-by-layer build patterns (Sessions 1-6)',
-    count: playbookPhases.reduce((sum, p) => sum + p.sections.length, 0),
     unit: 'sections',
   },
   {
