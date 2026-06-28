@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react'
 import { certQuestions, certDomains } from '../data/certQuestions'
+import { shuffleAllOptions } from '../data/shuffleOptions'
 
 const domainLabel = new Map(certDomains.map((d) => [d.key, d.label]))
 
@@ -19,9 +20,11 @@ export default function CertCards() {
   const [answers, setAnswers] = useState<ReadonlyMap<number, number>>(() => new Map())
   const [autoAdvance, setAutoAdvance] = useState(true)
 
+  // Shuffle option order once per page load.
+  const pool = useMemo(() => shuffleAllOptions(certQuestions), [])
   const cards = useMemo(
-    () => (filter === 'all' ? certQuestions : certQuestions.filter((c) => c.domain === filter)),
-    [filter]
+    () => (filter === 'all' ? pool : pool.filter((c) => c.domain === filter)),
+    [filter, pool]
   )
   const total = cards.length
   const safeIndex = Math.min(index, Math.max(0, total - 1))
@@ -136,7 +139,13 @@ export default function CertCards() {
       ) : (
       <div
         key={q.id}
-        className="bg-surface border border-edge rounded-xl p-8 min-h-[60vh] animate-fade-in flex flex-col"
+        className={`border rounded-xl p-8 min-h-[60vh] animate-fade-in flex flex-col transition-colors duration-300 ${
+          !revealed
+            ? 'bg-surface border-edge'
+            : selected === q.correctIndex
+              ? 'bg-correct-dim border-correct/40'
+              : 'bg-wrong-dim border-wrong/40'
+        }`}
       >
         <div className="mb-4">
           <span className="inline-block px-2.5 py-1 text-xs font-mono rounded-md bg-glow-dim/50 text-glow border border-glow/15">

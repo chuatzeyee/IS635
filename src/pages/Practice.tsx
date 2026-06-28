@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { RotateCcw, Shuffle, Trophy, Target, Zap } from 'lucide-react'
 import { questions } from '../data/questions'
+import { shuffleAllOptions } from '../data/shuffleOptions'
 
 type SessionFilter = 'all' | 1 | 2 | 3 | 4 | 5 | 6 | 8 | 10
 
@@ -78,11 +79,14 @@ export default function Practice() {
     () => new Map()
   )
 
+  // Shuffle option order once per page load.
+  const pool = useMemo(() => shuffleAllOptions(questions), [])
+
   const filtered = useMemo(() => {
     const base =
       filter === 'all'
-        ? questions
-        : questions.filter((q) => q.session === filter)
+        ? pool
+        : pool.filter((q) => q.session === filter)
 
     if (order.length > 0) {
       const idSet = new Set(base.map((q) => q.id))
@@ -152,8 +156,8 @@ export default function Practice() {
   const handleShuffle = () => {
     const base =
       filter === 'all'
-        ? questions
-        : questions.filter((q) => q.session === filter)
+        ? pool
+        : pool.filter((q) => q.session === filter)
     setOrder(shuffleArray(base.map((q) => q.id)))
     setAnswers(new Map())
   }
