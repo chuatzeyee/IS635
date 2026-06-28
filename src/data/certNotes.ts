@@ -231,27 +231,80 @@ export const certNotes: readonly CertNote[] = [
   {
     id: 'screen-lifecycle',
     title: 'Screen / Block Lifecycle Events',
-    summary: 'Which client-side event runs when — and where to put init logic.',
+    summary: 'The On-events that fire as a Screen or Block is created, updated, and destroyed.',
     blocks: [
+      {
+        kind: 'text',
+        text: 'Every Reactive Screen and Block runs through a **lifecycle**: it is created, rendered (possibly many times), and eventually destroyed. The "On" events let you hook logic into each stage. They run **client-side** (in the browser).',
+      },
       {
         kind: 'table',
         table: {
-          headers: ['Event', 'When it runs', 'Typical use'],
+          headers: ['Event', 'When it runs', 'On Screen?', 'On Block?', 'Typical use'],
           rows: [
-            ['OnInitialize', 'Once, before the first render', 'Initialize local variables'],
-            ['OnRender', 'On initial render AND every re-render', 'React to variable changes each paint'],
-            ['OnAfterFetch', 'After a screen Aggregate/Data Action returns', 'Post-process fetched data'],
-            ['OnParametersChanged', 'When an input parameter value changes (Blocks only)', 'Refresh a Block when its inputs change'],
+            ['OnInitialize', 'Once, when created, before the first render', 'Yes', 'Yes', 'Initialize local variables'],
+            ['OnRender', 'On initial render AND every re-render', 'Yes', 'Yes', 'React to variable/data changes each paint'],
+            ['OnParametersChanged', 'When an input parameter value changes', 'No', 'Yes (Blocks only)', 'Re-fetch/recompute when parent passes new inputs'],
+            ['OnDestroy', 'When the Screen/Block is destroyed (removed)', 'Yes', 'Yes', 'Cleanup — clear timers, intervals, listeners'],
+            ['OnAfterFetch', 'After an Aggregate/Data Action finishes loading', 'Yes', 'Yes', 'Post-process fetched data'],
           ],
         },
       },
       {
+        kind: 'text',
+        text: 'Typical order on first appearance: **OnInitialize → (data fetches) → OnAfterFetch → OnRender**. OnRender then fires again on every later UI update. **OnDestroy** fires last, when the element goes away.',
+      },
+      {
         kind: 'tip',
-        text: 'OnInitialize = once (init vars). OnRender = every UI update. Don\'t put one-time setup in OnRender — it fires repeatedly.',
+        text: 'OnInitialize = once (init vars). OnRender = every UI update (don\'t put one-time setup here — it fires repeatedly). OnDestroy = cleanup. OnParametersChanged = a Block reacting to new inputs.',
       },
       {
         kind: 'warn',
-        text: '**OnParametersChanged is a Block event**, not a Screen event — it fires when the parent passes new Input Parameter values. See the Blocks card.',
+        text: '**OnParametersChanged is a Block-only event** — Screens have no input-parameter-change event. Both Screens and Blocks DO have OnDestroy (see the next card for what "destroyed" means).',
+      },
+    ],
+  },
+  {
+    id: 'ondestroy',
+    title: 'OnDestroy & What "Being Destroyed" Means',
+    summary: 'A Screen/Block is destroyed when it is removed from the page — OnDestroy is your cleanup hook.',
+    blocks: [
+      {
+        kind: 'text',
+        text: 'A Screen or Block is **"destroyed"** when it is removed from the running page and its in-memory state (local variables, fetched data, timers) is discarded. The opposite of OnInitialize (create): OnInitialize sets things up, **OnDestroy tears them down**.',
+      },
+      {
+        kind: 'text',
+        text: 'When does it actually happen?',
+      },
+      {
+        kind: 'bullets',
+        items: [
+          '**Navigating away from a Screen** — you go to another Screen, so the old one is destroyed (its local variables are gone; come back and OnInitialize runs fresh).',
+          '**A Block inside an `If` widget whose condition turns False** — the Block is removed from the DOM and destroyed. (Turns True again → a NEW instance is created, OnInitialize runs again.)',
+          '**A Block rendered inside a List/For Each when its item is removed** — that item\'s Block instance is destroyed.',
+          '**Conditionally shown content being hidden** — anything unmounted from the screen tree is destroyed.',
+        ],
+      },
+      {
+        kind: 'text',
+        text: 'What OnDestroy is for — **cleanup of things that would otherwise leak or keep running**:',
+      },
+      {
+        kind: 'bullets',
+        items: [
+          'Clear a JavaScript `setInterval` / `setTimeout` you started so it doesn\'t fire after the UI is gone.',
+          'Remove event listeners or subscriptions added in OnInitialize/OnRender.',
+          'Release references to large client-side data.',
+        ],
+      },
+      {
+        kind: 'tip',
+        text: 'Pair them: whatever you START in OnInitialize (a timer, a listener), STOP it in OnDestroy. "Destroyed" = removed from the page + state discarded, not "deleted from the database."',
+      },
+      {
+        kind: 'warn',
+        text: 'Destroying a Screen/Block does NOT delete any database records — it only discards the in-memory UI instance and its local state. Don\'t confuse UI destroy with an Entity Delete.',
       },
     ],
   },
@@ -409,6 +462,51 @@ export const certNotes: readonly CertNote[] = [
       {
         kind: 'warn',
         text: 'If a referenced action/structure changed in the producer, the consumer shows an outdated reference until you **Refresh** it in Manage Dependencies.',
+      },
+    ],
+  },
+  {
+    id: 'architecture-canvas',
+    title: 'Architecture: Canvas Layers vs SOA Terms',
+    summary: 'OutSystems\' official 3-layer canvas — and how it maps to general SOA terms (Atomic/Composite/Wrapper).',
+    blocks: [
+      {
+        kind: 'text',
+        text: 'OutSystems\' OFFICIAL way to structure an app is the **Architecture Canvas**, a 3-layer model. Modules are placed in a layer and may only depend **downward** (upper layers consume lower ones, never the reverse) — this keeps dependencies clean and avoids cycles.',
+      },
+      {
+        kind: 'table',
+        table: {
+          headers: ['Canvas layer', 'Holds', 'Examples'],
+          rows: [
+            ['End-User', 'UI / user-facing screens & flows', 'Screens, navigation, app UI modules'],
+            ['Core', 'Business entities, rules, services owning data', 'Customer, Order business logic + data'],
+            ['Foundation', 'Reusable, non-business assets & integrations', 'Themes, UI patterns, external system connectors'],
+          ],
+        },
+      },
+      {
+        kind: 'text',
+        text: 'The general **SOA service terms** (often taught alongside) map roughly onto the canvas:',
+      },
+      {
+        kind: 'table',
+        table: {
+          headers: ['SOA term', 'Named as', 'Owns data?', 'Maps to (canvas)'],
+          rows: [
+            ['Atomic service', 'a NOUN (Customer, Product)', 'Yes — exclusively', 'Core layer'],
+            ['Composite service', 'a VERB (PlaceOrder)', 'No — orchestrates others', 'Core layer (orchestration)'],
+            ['Wrapper service', '—', 'Wraps an external/legacy system', 'Foundation layer'],
+          ],
+        },
+      },
+      {
+        kind: 'tip',
+        text: 'Atomic = NOUN that owns its data and never calls other services. Composite = VERB that orchestrates and owns no data. Wrapper = a standard interface over an external system.',
+      },
+      {
+        kind: 'warn',
+        text: 'Exam scope guard: **"End-User / Core / Foundation" is the OFFICIAL OutSystems Architecture Canvas** and is fair game on the cert. **"Atomic/Composite/Wrapper service" and "Party Atomic Service" are general SOA / course (SMU IS635) terms — NOT official OutSystems vocabulary.** "Party" (= any Person or Organization) is the industry Party data-model pattern, not an OutSystems feature. Expect canvas layers on the cert; expect Atomic/Composite/Party on the SMU exam.',
       },
     ],
   },
