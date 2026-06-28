@@ -2,13 +2,10 @@ import { Routes, Route } from 'react-router-dom'
 import NavPill from './components/NavPill'
 import ScrollToTop from './components/ScrollToTop'
 import Home from './pages/Home'
-import Topics from './pages/Topics'
-import Definitions from './pages/Definitions'
-import Guides from './pages/Guides'
+import Learn from './pages/Learn'
 import Practice from './pages/Practice'
 import CertExam from './pages/CertExam'
-import Build from './pages/Build'
-import HomeTest from './pages/HomeTest'
+import Labs from './pages/Labs'
 
 export default function App() {
   return (
@@ -19,13 +16,15 @@ export default function App() {
       >
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/topics" element={<Topics />} />
-          <Route path="/definitions" element={<Definitions />} />
-          <Route path="/guides" element={<Guides />} />
+          <Route path="/learn" element={<Learn />} />
+          <Route path="/topics" element={<Learn />} />
+          <Route path="/definitions" element={<Learn />} />
+          <Route path="/guides" element={<Learn />} />
           <Route path="/practice" element={<Practice />} />
           <Route path="/cert-exam" element={<CertExam />} />
-          <Route path="/build" element={<Build />} />
-          <Route path="/home-test" element={<HomeTest />} />
+          <Route path="/labs" element={<Labs />} />
+          <Route path="/build" element={<Labs />} />
+          <Route path="/home-test" element={<Labs />} />
         </Routes>
       </main>
       <NavPill />
