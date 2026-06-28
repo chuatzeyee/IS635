@@ -6,6 +6,7 @@ import {
   GraduationCap,
   Hammer,
 } from 'lucide-react'
+import { useFocusMode } from './FocusMode'
 
 const navItems = [
   { to: '/', label: 'Home', icon: Home, aliases: [] as readonly string[] },
@@ -17,9 +18,14 @@ const navItems = [
 
 export default function NavPill() {
   const location = useLocation()
+  const { chromeVisible } = useFocusMode()
 
   return (
-    <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
+    <nav
+      className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-500 ${
+        chromeVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
+    >
       <div className="flex items-center gap-1 px-2 py-2 bg-base/95 backdrop-blur-md border border-edge-bright rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
         {navItems.map(({ to, label, icon: Icon, aliases }) => {
           const isActive =

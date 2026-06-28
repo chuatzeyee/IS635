@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import NavPill from './components/NavPill'
 import ScrollToTop from './components/ScrollToTop'
+import { FocusModeProvider } from './components/FocusMode'
 import Home from './pages/Home'
 import Learn from './pages/Learn'
 import Practice from './pages/Practice'
@@ -9,6 +10,7 @@ import Labs from './pages/Labs'
 
 export default function App() {
   return (
+    <FocusModeProvider>
     <div className="min-h-screen bg-void">
       <main
         id="main-content"
@@ -36,5 +38,6 @@ export default function App() {
       <NavPill />
       <ScrollToTop />
     </div>
+    </FocusModeProvider>
   )
 }

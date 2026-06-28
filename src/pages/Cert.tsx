@@ -5,6 +5,7 @@ import CertStudy from './CertStudy'
 import CertSlides from './CertSlides'
 import CertCards from './CertCards'
 import { certQuestions2 } from '../data/certQuestions2'
+import { useFocusMode } from '../components/FocusMode'
 
 type CertTab = 'exam' | 'cards' | 'exam2' | 'cards2' | 'study' | 'slides'
 
@@ -30,10 +31,19 @@ export default function Cert() {
   const location = useLocation()
   const navigate = useNavigate()
   const active = tabFromPath(location.pathname)
+  const { chromeVisible } = useFocusMode()
+
+  // Only the card-based modes auto-hide chrome.
+  const isCardMode = active === 'cards' || active === 'cards2'
+  const hideTabs = isCardMode && !chromeVisible
 
   return (
     <div>
-      <div className="max-w-4xl mx-auto px-6 pt-10">
+      <div
+        className={`max-w-4xl mx-auto px-6 pt-10 transition-opacity duration-500 ${
+          hideTabs ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
+      >
         <div className="flex items-center gap-2 flex-wrap">
           {tabs.map(({ key, label, path, icon: Icon }) => (
             <button

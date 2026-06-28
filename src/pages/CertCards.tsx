@@ -1,31 +1,31 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { ChevronLeft, ChevronRight, Play, Pause, ChevronDown, Check } from 'lucide-react'
 import { certQuestions, certDomains } from '../data/certQuestions'
 import type { CertQuestion } from '../data/certQuestions'
 import { shuffleAllOptions } from '../data/shuffleOptions'
+import { useFocusMode } from '../components/FocusMode'
 
 const domainLabel = new Map(certDomains.map((d) => [d.key, d.label]))
-
-type DomainFilter = 'all' | string
-
-const filters: readonly { readonly label: string; readonly value: DomainFilter }[] = [
-  { label: 'All', value: 'all' },
-  ...certDomains.map((d) => ({ label: d.label, value: d.key })),
-]
 
 const AUTO_ADVANCE_MS = 5000
 
 export default function CertCards({ questions = certQuestions }: { readonly questions?: readonly CertQuestion[] }) {
-  const [filter, setFilter] = useState<DomainFilter>('all')
+  const [selectedDomains, setSelectedDomains] = useState<ReadonlySet<string>>(() => new Set())
+  const [dropdownOpen, setDropdownOpen] = useState(false)
   const [index, setIndex] = useState(0)
   const [answers, setAnswers] = useState<ReadonlyMap<number, number>>(() => new Map())
   const [autoAdvance, setAutoAdvance] = useState(true)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const { chromeVisible, activate } = useFocusMode()
+
+  // Activate auto-hide chrome while this view is mounted.
+  useEffect(() => activate(), [activate])
 
   // Shuffle option order once per page load.
   const pool = useMemo(() => shuffleAllOptions(questions), [questions])
   const cards = useMemo(
-    () => (filter === 'all' ? pool : pool.filter((c) => c.domain === filter)),
-    [filter, pool]
+    () => (selectedDomains.size === 0 ? pool : pool.filter((c) => selectedDomains.has(c.domain))),
+    [selectedDomains, pool]
   )
   const total = cards.length
   const safeIndex = Math.min(index, Math.max(0, total - 1))
@@ -54,10 +54,32 @@ export default function CertCards({ questions = certQuestions }: { readonly ques
     [q]
   )
 
-  const handleFilter = (value: DomainFilter) => {
-    setFilter(value)
+  const toggleDomain = (key: string) => {
+    setSelectedDomains((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
     setIndex(0)
   }
+
+  const clearDomains = () => {
+    setSelectedDomains(new Set())
+    setIndex(0)
+  }
+
+  // Close dropdown on outside click.
+  useEffect(() => {
+    if (!dropdownOpen) return
+    const onClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [dropdownOpen])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -73,40 +95,66 @@ export default function CertCards({ questions = certQuestions }: { readonly ques
     return () => window.removeEventListener('keydown', onKey)
   }, [go, pick])
 
-  // Auto-advance 8s AFTER the card is answered; stops on the last card.
+  // Auto-advance AFTER the card is answered; stops on the last card.
   useEffect(() => {
     if (!autoAdvance || !revealed || total === 0 || safeIndex >= total - 1) return
     const timer = setTimeout(() => go(1), AUTO_ADVANCE_MS)
     return () => clearTimeout(timer)
   }, [autoAdvance, revealed, safeIndex, total, go])
 
+  const filterLabel =
+    selectedDomains.size === 0
+      ? 'All categories'
+      : selectedDomains.size === 1
+        ? domainLabel.get([...selectedDomains][0]) ?? '1 category'
+        : `${selectedDomains.size} categories`
+
+  const chromeCls = `transition-opacity duration-500 ${chromeVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`
+  const countingDown = autoAdvance && revealed && total > 0 && safeIndex < total - 1
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        {filters.map(({ label, value }) => (
+      <div className={`flex items-center justify-between gap-3 mb-4 flex-wrap ${chromeCls}`}>
+        {/* Multi-select category dropdown */}
+        <div className="relative" ref={dropdownRef}>
           <button
-            key={label}
-            onClick={() => handleFilter(value)}
-            className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
-              filter === value
-                ? 'bg-glow-dim text-glow border border-glow/30 shadow-[0_0_12px_rgba(74,222,128,0.1)]'
-                : 'bg-surface text-ink-secondary border border-edge hover:bg-raised hover:text-ink'
-            }`}
+            onClick={() => setDropdownOpen((o) => !o)}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-surface text-ink-secondary border border-edge hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer"
           >
-            {label}
+            {filterLabel}
+            <ChevronDown size={13} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
           </button>
-        ))}
-      </div>
+          {dropdownOpen && (
+            <div className="absolute left-0 mt-1 w-56 z-20 bg-base border border-edge-bright rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)] p-1 animate-scale-in">
+              <button
+                onClick={clearDomains}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md text-ink-secondary hover:bg-raised hover:text-ink transition-colors cursor-pointer"
+              >
+                <span className={`w-3.5 h-3.5 flex items-center justify-center rounded border ${selectedDomains.size === 0 ? 'bg-glow border-glow text-base' : 'border-edge'}`}>
+                  {selectedDomains.size === 0 && <Check size={10} />}
+                </span>
+                All categories
+              </button>
+              <div className="h-px bg-edge my-1" />
+              {certDomains.map((d) => {
+                const on = selectedDomains.has(d.key)
+                return (
+                  <button
+                    key={d.key}
+                    onClick={() => toggleDomain(d.key)}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md text-ink-secondary hover:bg-raised hover:text-ink transition-colors cursor-pointer"
+                  >
+                    <span className={`w-3.5 h-3.5 flex items-center justify-center rounded border ${on ? 'bg-glow border-glow text-base' : 'border-edge'}`}>
+                      {on && <Check size={10} />}
+                    </span>
+                    {d.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-xs text-ink-muted font-mono">
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">1</kbd>–
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">4</kbd> answer ·{' '}
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">←</kbd>
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">→</kbd> navigate ·{' '}
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Enter</kbd> next ·{' '}
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Space</kbd> pause
-        </p>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setAutoAdvance((p) => !p)}
@@ -115,7 +163,7 @@ export default function CertCards({ questions = certQuestions }: { readonly ques
                 ? 'bg-glow-dim text-glow border-glow/30'
                 : 'bg-surface text-ink-secondary border-edge hover:bg-raised hover:text-ink'
             }`}
-            title="Auto-advance every 5 seconds"
+            title="Auto-advance every 5 seconds after answering"
           >
             {autoAdvance ? <Pause size={12} /> : <Play size={12} />}
             Auto 5s
@@ -126,11 +174,30 @@ export default function CertCards({ questions = certQuestions }: { readonly ques
         </div>
       </div>
 
+      <div className={`mb-4 ${chromeCls}`}>
+        <p className="text-xs text-ink-muted font-mono">
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">1</kbd>–
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">4</kbd> answer ·{' '}
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">←</kbd>
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">→</kbd> navigate ·{' '}
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Enter</kbd> next ·{' '}
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Space</kbd> pause
+        </p>
+      </div>
+
+      {/* Progress: animated countdown bar when auto-advancing, else position bar */}
       <div className="h-1 bg-raised rounded-full overflow-hidden border border-edge mb-6">
-        <div
-          className="h-full bg-glow/70 rounded-full transition-all duration-300 ease-out"
-          style={{ width: `${total === 0 ? 0 : ((safeIndex + 1) / total) * 100}%` }}
-        />
+        {countingDown ? (
+          <div
+            key={q ? `countdown-${q.id}` : 'countdown'}
+            className="h-full bg-glow rounded-full animate-progress-fill"
+          />
+        ) : (
+          <div
+            className="h-full bg-glow/70 rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${total === 0 ? 0 : ((safeIndex + 1) / total) * 100}%` }}
+          />
+        )}
       </div>
 
       {!q ? (
@@ -207,7 +274,7 @@ export default function CertCards({ questions = certQuestions }: { readonly ques
       </div>
       )}
 
-      <div className="flex items-center justify-between mt-6">
+      <div className={`flex items-center justify-between mt-6 ${chromeCls}`}>
         <button
           onClick={() => go(-1)}
           disabled={safeIndex === 0}
