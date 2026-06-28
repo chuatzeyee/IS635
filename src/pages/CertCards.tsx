@@ -60,7 +60,7 @@ export default function CertCards() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') go(1)
+      if (e.key === 'ArrowRight' || e.key === 'Enter') go(1)
       else if (e.key === 'ArrowLeft') go(-1)
       else if (e.key >= '1' && e.key <= '4') pick(Number(e.key) - 1)
     }
@@ -98,7 +98,8 @@ export default function CertCards() {
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">1</kbd>–
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">4</kbd> answer ·{' '}
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">←</kbd>
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">→</kbd> navigate
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">→</kbd> navigate ·{' '}
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Enter</kbd> next
         </p>
         <div className="flex items-center gap-3">
           <button
