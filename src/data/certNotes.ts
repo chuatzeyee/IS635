@@ -198,12 +198,33 @@ export const certNotes: readonly CertNote[] = [
         ],
       },
       {
+        kind: 'text',
+        text: '**When to use "With or Without" (left join)** — whenever the related record is optional and you still want the main row to appear. The giveaway phrase is "all X **including those without** Y":',
+      },
+      {
+        kind: 'table',
+        table: {
+          headers: ['Use case', 'Why "With or Without"'],
+          rows: [
+            ['All customers including those with no orders', 'Inner join would drop customers who never ordered'],
+            ['List visits where the caregiver is not yet assigned', 'Optional FK (CaregiverId is null) — keep the visit visible'],
+            ['Counts/sums that must show zeros (sales per region, incl. 0)', 'Inner join omits the zero rows, skewing the report'],
+            ['Find records that LACK a relation (customers with no orders)', 'Left join, then filter `Order.Id = NullIdentifier()`'],
+            ['All products including those never reviewed', 'Show every product even with no related reviews'],
+          ],
+        },
+      },
+      {
+        kind: 'tip',
+        text: 'Decision rule: "Do I want main-side rows even when the joined side is empty?" Yes → **With or Without** (left). Only matched pairs → **With** (inner). To find the *missing* ones, left-join then filter `JoinedEntity.Id = NullIdentifier()`.',
+      },
+      {
         kind: 'tip',
         text: 'Think of an Aggregate as a saved SELECT you build by clicking: Sources = FROM, Filters = WHERE, Sorts = ORDER BY, Joins = JOIN. Output is always a List you can loop or bind.',
       },
       {
         kind: 'warn',
-        text: 'Aggregate is **server-side only** — it does NOT exist inside a Client Action (the browser can\'t query the DB). To get data from the client, call a Server Action/Data Action that runs the Aggregate. Common exam trap.',
+        text: 'After a "With or Without" join the missing side\'s attributes come back **null/empty** — guard for it in expressions. And Aggregate is **server-side only**: it does NOT exist inside a Client Action (the browser can\'t query the DB); call a Server/Data Action instead. Common exam trap.',
       },
     ],
   },
