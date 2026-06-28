@@ -16,8 +16,7 @@ const AUTO_ADVANCE_MS = 5000
 export default function CertCards() {
   const [filter, setFilter] = useState<DomainFilter>('all')
   const [index, setIndex] = useState(0)
-  const [selected, setSelected] = useState<number | null>(null)
-  const [revealed, setRevealed] = useState(false)
+  const [answers, setAnswers] = useState<ReadonlyMap<number, number>>(() => new Map())
   const [autoAdvance, setAutoAdvance] = useState(true)
 
   const cards = useMemo(
@@ -28,16 +27,12 @@ export default function CertCards() {
   const safeIndex = Math.min(index, Math.max(0, total - 1))
   const q = cards[safeIndex]
 
+  const selected = q ? answers.get(q.id) ?? null : null
+  const revealed = selected !== null
+
   const go = useCallback(
     (delta: number) => {
-      setIndex((prev) => {
-        const next = Math.min(total - 1, Math.max(0, prev + delta))
-        if (next !== prev) {
-          setSelected(null)
-          setRevealed(false)
-        }
-        return next
-      })
+      setIndex((prev) => Math.min(total - 1, Math.max(0, prev + delta)))
     },
     [total]
   )
@@ -45,8 +40,12 @@ export default function CertCards() {
   const pick = useCallback(
     (optionIndex: number) => {
       if (!q || optionIndex < 0 || optionIndex >= q.options.length) return
-      setSelected(optionIndex)
-      setRevealed(true)
+      setAnswers((prev) => {
+        if (prev.has(q.id)) return prev
+        const next = new Map(prev)
+        next.set(q.id, optionIndex)
+        return next
+      })
     },
     [q]
   )
@@ -54,8 +53,6 @@ export default function CertCards() {
   const handleFilter = (value: DomainFilter) => {
     setFilter(value)
     setIndex(0)
-    setSelected(null)
-    setRevealed(false)
   }
 
   useEffect(() => {
@@ -205,16 +202,9 @@ export default function CertCards() {
           Prev
         </button>
 
-        {!revealed ? (
-          <button
-            onClick={() => setRevealed(true)}
-            className="text-sm text-glow hover:text-glow-hover font-medium cursor-pointer transition-colors duration-150"
-          >
-            Reveal answer
-          </button>
-        ) : (
-          <span className="text-xs text-ink-faint font-mono">answered</span>
-        )}
+        <span className="text-xs text-ink-faint font-mono">
+          {revealed ? 'answered' : 'pick 1–4'}
+        </span>
 
         <button
           onClick={() => go(1)}
