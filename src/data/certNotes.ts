@@ -91,6 +91,49 @@ export const certNotes: readonly CertNote[] = [
     ],
   },
   {
+    id: 'attribute-migration',
+    title: 'Changing an Attribute Data Type (Migration on Publish)',
+    summary: 'On publish OutSystems migrates the column. Widening is safe; narrowing can truncate or lose data.',
+    blocks: [
+      {
+        kind: 'text',
+        text: 'When you change an Entity attribute\'s **Data Type** and publish, OutSystems runs a **database migration** — it alters the underlying column and **attempts to convert every existing value** to the new type. Whether that is safe depends on the direction of the conversion.',
+      },
+      {
+        kind: 'table',
+        table: {
+          headers: ['Direction', 'Examples', 'Result'],
+          rows: [
+            ['Widening (safe)', 'Integer → Long Integer, Integer → Decimal, Integer/Decimal → Text', 'Every value fits — migrates cleanly, no loss'],
+            ['Narrowing (risky)', 'Text → Integer, Decimal → Integer, Long Integer → Integer, Text(200) → Text(50)', 'Lossy — values may truncate, reset to default, or the migration errors'],
+          ],
+        },
+      },
+      {
+        kind: 'text',
+        text: 'What happens to existing data in the **narrowing** cases:',
+      },
+      {
+        kind: 'bullets',
+        items: [
+          '**Text → Integer**: numeric strings ("42") convert; non-numeric ("abc", "") cannot → reset to the default (0) or cause the migration to fail.',
+          '**Decimal → Integer**: the fractional part is **truncated** (3.9 → 3).',
+          '**Long Integer → Integer**: values that exceed Integer range **overflow** → error/reset.',
+          '**Text(200) → Text(50)**: strings longer than 50 are **truncated** to 50 characters.',
+          'OutSystems shows a **warning** before publishing a potentially lossy change — but once published, lost/truncated data is gone (not reversible).',
+        ],
+      },
+      {
+        kind: 'tip',
+        text: 'Widening = safe & automatic (Integer → Text just works). Narrowing = lossy: expect truncation, defaulting, or a failed migration. Safer pattern: add a NEW attribute of the target type, migrate values with explicit logic handling the bad cases, then retire the old one.',
+      },
+      {
+        kind: 'warn',
+        text: 'Don\'t treat a data-type change as reversible. A narrowing publish that truncates/zeroes values destroys the originals — there is no automatic undo.',
+      },
+    ],
+  },
+  {
     id: 'entities-static-structures',
     title: 'Entity vs Static Entity vs Structure',
     summary: 'Three ways to hold data — the difference is WHERE it lives and WHO can change it.',

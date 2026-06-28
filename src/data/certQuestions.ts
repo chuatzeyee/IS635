@@ -2334,4 +2334,45 @@ export const certQuestions: readonly CertQuestion[] = [
     correctIndex: 2,
     explanation: "Continue resumes execution and runs until the next breakpoint (or the flow ends). Step Into/Over advance only one node at a time.",
   },
+
+  // ── Attribute Data-Type Migration ──
+  {
+    id: 177,
+    domain: "data-modeling",
+    question: "A developer changes an Entity attribute from Integer to Text and publishes. What happens to the existing stored data?",
+    options: [
+      "All existing records are deleted to avoid conversion errors",
+      "It migrates cleanly — Integer to Text is a widening conversion, so every value converts with no loss",
+      "Publish is blocked and a new attribute is required",
+      "Only new records get the Text type; old rows stay Integer",
+    ],
+    correctIndex: 1,
+    explanation: "Integer → Text is a widening conversion: every integer fits as text, so the migration carries existing values over with no data loss.",
+  },
+  {
+    id: 178,
+    domain: "data-modeling",
+    question: "An attribute is changed from Text to Integer and published. Existing rows contain values like \"42\" and \"abc\". What is the expected outcome?",
+    options: [
+      "Every value converts perfectly",
+      "Numeric strings convert, but non-numeric values cannot — they are lost (defaulted) or the migration errors; OutSystems warns first",
+      "The column is left unchanged",
+      "Only \"abc\" is kept, \"42\" is discarded",
+    ],
+    correctIndex: 1,
+    explanation: "Text → Integer is a narrowing conversion. \"42\" converts but \"abc\"/empty cannot, so those values are lost or cause a failure. OutSystems warns before a potentially lossy publish.",
+  },
+  {
+    id: 179,
+    domain: "data-modeling",
+    question: "Which attribute data-type change is a NARROWING conversion that risks losing or truncating existing data?",
+    options: [
+      "Integer → Long Integer",
+      "Integer → Decimal",
+      "Decimal → Integer",
+      "Integer → Text",
+    ],
+    correctIndex: 2,
+    explanation: "Decimal → Integer truncates the fractional part (3.9 → 3), a lossy narrowing conversion. The other three are widening conversions that migrate cleanly.",
+  },
 ]
