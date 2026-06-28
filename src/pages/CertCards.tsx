@@ -1,15 +1,29 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { certQuestions, certDomains } from '../data/certQuestions'
 
 const domainLabel = new Map(certDomains.map((d) => [d.key, d.label]))
 
+type DomainFilter = 'all' | string
+
+const filters: readonly { readonly label: string; readonly value: DomainFilter }[] = [
+  { label: 'All', value: 'all' },
+  ...certDomains.map((d) => ({ label: d.label, value: d.key })),
+]
+
 export default function CertCards() {
+  const [filter, setFilter] = useState<DomainFilter>('all')
   const [index, setIndex] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
-  const total = certQuestions.length
-  const q = certQuestions[index]
+
+  const cards = useMemo(
+    () => (filter === 'all' ? certQuestions : certQuestions.filter((c) => c.domain === filter)),
+    [filter]
+  )
+  const total = cards.length
+  const safeIndex = Math.min(index, Math.max(0, total - 1))
+  const q = cards[safeIndex]
 
   const go = useCallback(
     (delta: number) => {
@@ -27,12 +41,19 @@ export default function CertCards() {
 
   const pick = useCallback(
     (optionIndex: number) => {
-      if (optionIndex < 0 || optionIndex >= q.options.length) return
+      if (!q || optionIndex < 0 || optionIndex >= q.options.length) return
       setSelected(optionIndex)
       setRevealed(true)
     },
     [q]
   )
+
+  const handleFilter = (value: DomainFilter) => {
+    setFilter(value)
+    setIndex(0)
+    setSelected(null)
+    setRevealed(false)
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -46,6 +67,22 @@ export default function CertCards() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {filters.map(({ label, value }) => (
+          <button
+            key={label}
+            onClick={() => handleFilter(value)}
+            className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
+              filter === value
+                ? 'bg-glow-dim text-glow border border-glow/30 shadow-[0_0_12px_rgba(74,222,128,0.1)]'
+                : 'bg-surface text-ink-secondary border border-edge hover:bg-raised hover:text-ink'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs text-ink-muted font-mono">
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">1</kbd>–
@@ -54,17 +91,22 @@ export default function CertCards() {
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">→</kbd> navigate
         </p>
         <span className="text-xs text-ink-faint font-mono">
-          {index + 1} / {total}
+          {total === 0 ? '0 / 0' : `${safeIndex + 1} / ${total}`}
         </span>
       </div>
 
       <div className="h-1 bg-raised rounded-full overflow-hidden border border-edge mb-6">
         <div
           className="h-full bg-glow/70 rounded-full transition-all duration-300 ease-out"
-          style={{ width: `${((index + 1) / total) * 100}%` }}
+          style={{ width: `${total === 0 ? 0 : ((safeIndex + 1) / total) * 100}%` }}
         />
       </div>
 
+      {!q ? (
+        <div className="bg-surface border border-edge rounded-xl p-8 min-h-[40vh] flex items-center justify-center">
+          <p className="text-sm text-ink-muted">No questions in this category.</p>
+        </div>
+      ) : (
       <div
         key={q.id}
         className="bg-surface border border-edge rounded-xl p-8 min-h-[60vh] animate-fade-in flex flex-col"
@@ -126,11 +168,12 @@ export default function CertCards() {
           </div>
         )}
       </div>
+      )}
 
       <div className="flex items-center justify-between mt-6">
         <button
           onClick={() => go(-1)}
-          disabled={index === 0}
+          disabled={safeIndex === 0}
           className="flex items-center gap-1.5 px-4 py-2 text-sm text-ink-secondary bg-surface border border-edge rounded-lg hover:bg-raised hover:text-ink hover:border-edge-bright transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-default"
         >
           <ChevronLeft size={16} />
@@ -150,7 +193,7 @@ export default function CertCards() {
 
         <button
           onClick={() => go(1)}
-          disabled={index === total - 1}
+          disabled={total === 0 || safeIndex === total - 1}
           className="flex items-center gap-1.5 px-4 py-2 text-sm text-ink-secondary bg-surface border border-edge rounded-lg hover:bg-raised hover:text-ink hover:border-edge-bright transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-default"
         >
           Next
