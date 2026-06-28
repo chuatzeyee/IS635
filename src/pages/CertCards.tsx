@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react'
 import { certQuestions, certDomains } from '../data/certQuestions'
 
 const domainLabel = new Map(certDomains.map((d) => [d.key, d.label]))
@@ -11,11 +11,14 @@ const filters: readonly { readonly label: string; readonly value: DomainFilter }
   ...certDomains.map((d) => ({ label: d.label, value: d.key })),
 ]
 
+const AUTO_ADVANCE_MS = 8000
+
 export default function CertCards() {
   const [filter, setFilter] = useState<DomainFilter>('all')
   const [index, setIndex] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
+  const [autoAdvance, setAutoAdvance] = useState(true)
 
   const cards = useMemo(
     () => (filter === 'all' ? certQuestions : certQuestions.filter((c) => c.domain === filter)),
@@ -65,6 +68,13 @@ export default function CertCards() {
     return () => window.removeEventListener('keydown', onKey)
   }, [go, pick])
 
+  // Auto-advance every 8s; restarts on each card change, stops on the last card.
+  useEffect(() => {
+    if (!autoAdvance || total === 0 || safeIndex >= total - 1) return
+    const timer = setTimeout(() => go(1), AUTO_ADVANCE_MS)
+    return () => clearTimeout(timer)
+  }, [autoAdvance, safeIndex, total, go])
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -90,9 +100,23 @@ export default function CertCards() {
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">←</kbd>
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">→</kbd> navigate
         </p>
-        <span className="text-xs text-ink-faint font-mono">
-          {total === 0 ? '0 / 0' : `${safeIndex + 1} / ${total}`}
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setAutoAdvance((p) => !p)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border transition-all duration-150 cursor-pointer ${
+              autoAdvance
+                ? 'bg-glow-dim text-glow border-glow/30'
+                : 'bg-surface text-ink-secondary border-edge hover:bg-raised hover:text-ink'
+            }`}
+            title="Auto-advance every 8 seconds"
+          >
+            {autoAdvance ? <Pause size={12} /> : <Play size={12} />}
+            Auto 8s
+          </button>
+          <span className="text-xs text-ink-faint font-mono">
+            {total === 0 ? '0 / 0' : `${safeIndex + 1} / ${total}`}
+          </span>
+        </div>
       </div>
 
       <div className="h-1 bg-raised rounded-full overflow-hidden border border-edge mb-6">
