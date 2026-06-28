@@ -68,12 +68,12 @@ export default function CertCards() {
     return () => window.removeEventListener('keydown', onKey)
   }, [go, pick])
 
-  // Auto-advance every 8s; restarts on each card change, stops on the last card.
+  // Auto-advance 8s AFTER the card is answered; stops on the last card.
   useEffect(() => {
-    if (!autoAdvance || total === 0 || safeIndex >= total - 1) return
+    if (!autoAdvance || !revealed || total === 0 || safeIndex >= total - 1) return
     const timer = setTimeout(() => go(1), AUTO_ADVANCE_MS)
     return () => clearTimeout(timer)
-  }, [autoAdvance, safeIndex, total, go])
+  }, [autoAdvance, revealed, safeIndex, total, go])
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
