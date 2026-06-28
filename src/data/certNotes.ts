@@ -93,49 +93,117 @@ export const certNotes: readonly CertNote[] = [
   {
     id: 'entities-static-structures',
     title: 'Entity vs Static Entity vs Structure',
-    summary: 'Three data shapes — which is persisted, which is fixed, which is in-memory.',
+    summary: 'Three ways to hold data — the difference is WHERE it lives and WHO can change it.',
     blocks: [
+      {
+        kind: 'text',
+        text: 'The single question that separates these three: **is the data stored in the database, and can the running app change it?** An **Entity** is a live database table. A **Static Entity** is a database table too, but its rows are frozen at design time. A **Structure** is not in the database at all — it only exists in memory while logic runs.',
+      },
       {
         kind: 'table',
         table: {
-          headers: ['Type', 'Persisted in DB?', 'Runtime CRUD?', 'Use for'],
+          headers: ['', 'Entity', 'Static Entity', 'Structure'],
           rows: [
-            ['Entity', 'Yes (a table)', 'Create / Read / Update / Delete', 'Live application data (Orders, Customers)'],
-            ['Static Entity', 'Yes (fixed records)', 'Read only — only a Get action', 'Fixed lookup/enumeration lists (Status, CareType)'],
-            ['Structure', 'No (in-memory only)', 'N/A — just a data shape', 'API payloads, passing grouped data between actions'],
+            ['Stored in database?', 'Yes — a real table', 'Yes — a small fixed table', 'No — memory only'],
+            ['Who sets the rows?', 'The app, at runtime', 'The developer, at design time', 'Nobody — it has no rows'],
+            ['Runtime actions', 'Create, Read, Update, Delete', 'Get only (read)', 'None (just a shape)'],
+            ['Survives a restart?', 'Yes (in the DB)', 'Yes (in the DB)', 'No (gone after the action)'],
+            ['Example', 'Customer, Order, Visit', 'OrderStatus, CareType, Gender', 'An API request/response body'],
           ],
         },
       },
       {
         kind: 'bullets',
         items: [
-          '**Static Entity** records are defined at **design time** and behave like an enumeration; they expose only a **Get** action (no Create/Update/Delete).',
-          'Static Entities CAN have extra attributes (e.g. a Label or Order), filled per record in the design-time table.',
-          '**Structure** maps to no database table — used for in-memory composite data (e.g. deserialized JSON).',
-          'Both Entities and Structures can be used as the Data Type of variables and Lists.',
+          '**Entity** = your live data. Users create and edit these rows constantly (every new Order is a new row). Auto-gets an `Id` primary key and full CRUD entity actions.',
+          '**Static Entity** = a fixed reference list you type in once as a developer. The app can read it but never add/edit/delete rows at runtime — so it only gets a **Get** action. It behaves like an **enumeration** (see next card).',
+          '**Structure** = a named bundle of fields with **no table behind it**. Used to group values in memory — e.g. the shape you deserialize JSON into, or a multi-field input/output of an action.',
+          'Both Entity rows and Structures can be the Data Type of a Variable or List; a Static Entity is referenced by its **Identifier** (like picking an enum value).',
         ],
+      },
+      {
+        kind: 'tip',
+        text: 'Decide by asking: Will users change this data while the app runs? → **Entity**. Is it a fixed list I define once (statuses, types)? → **Static Entity**. Do I just need to carry some fields around in memory? → **Structure**.',
+      },
+      {
+        kind: 'warn',
+        text: 'Common trap: a Static Entity is still **persisted in the database** — it is NOT in-memory. The in-memory one is the **Structure**. And a Static Entity has **no Create/Update/Delete**, only Get.',
+      },
+    ],
+  },
+  {
+    id: 'enumeration',
+    title: 'Enumeration',
+    summary: 'A fixed set of named, known-in-advance values — modelled in OutSystems as a Static Entity.',
+    blocks: [
+      {
+        kind: 'text',
+        text: 'An **enumeration** (enum) is a small, **fixed set of named choices** that are known when you build the app and do not change at runtime — like the days of the week, or order statuses {Draft, Submitted, Approved, Rejected}. Instead of scattering raw numbers or text strings ("status = 2") through your logic, you give each value a clear name.',
+      },
+      {
+        kind: 'text',
+        text: 'OutSystems has **no separate "enum" type** — you model an enumeration with a **Static Entity**. Each record is one enum value, with an auto **Identifier** (the value you compare against) plus any extra attributes you add, such as a display **Label** or a sort **Order**.',
+      },
+      {
+        kind: 'bullets',
+        items: [
+          'Records are defined at **design time** in the Static Entity\'s records table — fixed, read-only at runtime.',
+          'Reference a value by its **Identifier**, e.g. `OrderStatus.Approved` — readable and refactor-safe, unlike a magic number `3`.',
+          'Add attributes like `Label` ("Approved") or `Color` and read them with the **Get** action for display.',
+          'Use enums to drive **If/Switch** logic, dropdown options, and status columns — anywhere a column can only be one of a known list.',
+        ],
+      },
+      {
+        kind: 'tip',
+        text: 'Rule of thumb: if a field can only ever be one of a short, pre-known list that the app does not edit, make it a **Static Entity** (an enumeration) and reference values by name, not by number.',
+      },
+      {
+        kind: 'warn',
+        text: 'If the list of choices can grow or be edited by users at runtime (e.g. product categories an admin manages), it is NOT an enumeration — use a regular **Entity** instead.',
       },
     ],
   },
   {
     id: 'aggregates',
     title: 'Aggregates & Data Fetching',
-    summary: 'The visual SELECT — where it runs and how filters/joins behave.',
+    summary: 'The visual query (SELECT) — how you read data from Entities without writing SQL.',
     blocks: [
+      {
+        kind: 'text',
+        text: 'An **Aggregate** is OutSystems\' visual way to read data from one or more Entities — the low-code equivalent of a SQL **SELECT**. You pick source Entities, add filters, sorts, and joins in a visual editor, and it returns a **List** of records. It always runs on the **server** (only the server can reach the database) and the result is sent to the screen.',
+      },
+      {
+        kind: 'table',
+        table: {
+          headers: ['Part of an Aggregate', 'What it does'],
+          rows: [
+            ['Sources', 'The Entities you read from (one or more)'],
+            ['Filters', 'Conditions that keep/drop rows — like SQL WHERE'],
+            ['Sorts', 'Order the results by one or more attributes'],
+            ['Joins', 'How multiple sources are combined (With / With or Without)'],
+            ['Output', 'A **List** of records, plus **.Count** (how many matched)'],
+            ['Max Records', 'Caps how many rows are fetched (performance)'],
+          ],
+        },
+      },
       {
         kind: 'bullets',
         items: [
-          'An **Aggregate** executes on the **server** (it queries the database); the browser cannot query the DB directly.',
-          'Multiple filters are combined with logical **AND** — a record must satisfy every filter. For OR, write one filter expression using the `or` operator.',
-          'Join types: **With (inner)** returns only matched rows; **With or Without (left)** keeps the source rows even when the joined side has no match.',
-          'The Aggregate outputs a **List** plus a **.Count**; **Max Records** limits how many rows are fetched.',
-          'On a Reactive Screen, an Aggregate fetched in the screen runs its query, then **OnAfterFetch** runs once the data returns.',
-          'Use **Test Values** in the editor to preview results at design time.',
+          '**Filters combine with AND** — a row must pass *every* filter to be returned. To express OR, write a single filter expression using the `or` operator (e.g. `Status = 1 or Status = 2`).',
+          '**With (inner join)**: returns only rows that have a match on both sides. Use when you need the related record to exist.',
+          '**With or Without (left join)**: keeps every row from the main source even when the joined side has no match (missing side comes back as null/empty). Use when the related record is optional.',
+          'The Aggregate gives you `<Aggregate>.List` (the records) and `<Aggregate>.List.Count` (the total) — bind the List to a Table/List widget on screen.',
+          'On a Reactive Screen, the Aggregate runs its query, then the screen\'s **OnAfterFetch** event fires once the data has returned — the right place to post-process results.',
+          'Re-running a screen Aggregate (after data changes) is done with **Refresh Data**; preview results at design time with **Test Values**.',
         ],
       },
       {
+        kind: 'tip',
+        text: 'Think of an Aggregate as a saved SELECT you build by clicking: Sources = FROM, Filters = WHERE, Sorts = ORDER BY, Joins = JOIN. Output is always a List you can loop or bind.',
+      },
+      {
         kind: 'warn',
-        text: 'Aggregate is **server-side only** — it is not available in a Client Action. Common exam trap.',
+        text: 'Aggregate is **server-side only** — it does NOT exist inside a Client Action (the browser can\'t query the DB). To get data from the client, call a Server Action/Data Action that runs the Aggregate. Common exam trap.',
       },
     ],
   },
