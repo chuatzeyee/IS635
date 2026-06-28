@@ -8,7 +8,6 @@ import {
   GraduationCap,
   Hammer,
   Target,
-  Presentation,
 } from 'lucide-react'
 
 const navItems = [
@@ -20,7 +19,6 @@ const navItems = [
   { to: '/cert-exam', label: 'Cert', icon: GraduationCap },
   { to: '/build', label: 'Build', icon: Hammer },
   { to: '/home-test', label: 'Lab Test', icon: Target },
-  { to: '/scripts', label: 'Script', icon: Presentation },
 ] as const
 
 export default function NavPill() {
