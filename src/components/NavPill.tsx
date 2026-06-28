@@ -11,7 +11,7 @@ const navItems = [
   { to: '/', label: 'Home', icon: Home, aliases: [] as readonly string[] },
   { to: '/learn', label: 'Learn', icon: BookOpen, aliases: ['/topics', '/definitions', '/guides'] },
   { to: '/practice', label: 'Practice', icon: FlaskConical, aliases: [] },
-  { to: '/cert', label: 'Cert', icon: GraduationCap, aliases: ['/cert-exam', '/cert-cards', '/cert-study', '/cert-slides'] },
+  { to: '/cert', label: 'Cert', icon: GraduationCap, aliases: ['/cert-exam', '/cert-cards', '/cert-exam-2', '/cert-cards-2', '/cert-study', '/cert-slides'] },
   { to: '/labs', label: 'Labs', icon: Hammer, aliases: ['/build', '/home-test'] },
 ] as const
 

@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { RotateCcw, Shuffle, Trophy, Target, Zap } from 'lucide-react'
 import { certQuestions, certDomains } from '../data/certQuestions'
+import type { CertQuestion } from '../data/certQuestions'
 import { shuffleAllOptions } from '../data/shuffleOptions'
 
 type DomainFilter = 'all' | string
@@ -65,13 +66,13 @@ const domainFilters: readonly { readonly label: string; readonly value: DomainFi
   ...certDomains.map((d) => ({ label: d.label, value: d.key })),
 ]
 
-export default function CertExam() {
+export default function CertExam({ questions = certQuestions }: { readonly questions?: readonly CertQuestion[] }) {
   const [filter, setFilter] = useState<DomainFilter>('all')
   const [order, setOrder] = useState<readonly number[]>([])
   const [answers, setAnswers] = useState<ReadonlyMap<number, AnswerState>>(() => new Map())
 
   // Shuffle option order once per page load.
-  const pool = useMemo(() => shuffleAllOptions(certQuestions), [])
+  const pool = useMemo(() => shuffleAllOptions(questions), [questions])
 
   const filtered = useMemo(() => {
     const base = filter === 'all' ? pool : pool.filter((q) => q.domain === filter)

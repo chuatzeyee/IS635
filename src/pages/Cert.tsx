@@ -4,12 +4,15 @@ import CertExam from './CertExam'
 import CertStudy from './CertStudy'
 import CertSlides from './CertSlides'
 import CertCards from './CertCards'
+import { certQuestions2 } from '../data/certQuestions2'
 
-type CertTab = 'exam' | 'study' | 'slides' | 'cards'
+type CertTab = 'exam' | 'cards' | 'exam2' | 'cards2' | 'study' | 'slides'
 
 const tabs: readonly { readonly key: CertTab; readonly label: string; readonly path: string; readonly icon: typeof GraduationCap }[] = [
-  { key: 'exam', label: 'Practice Exam', path: '/cert-exam', icon: GraduationCap },
-  { key: 'cards', label: 'Exam Cards', path: '/cert-cards', icon: Layers },
+  { key: 'exam', label: 'Exam 1', path: '/cert-exam', icon: GraduationCap },
+  { key: 'cards', label: 'Exam 1 Cards', path: '/cert-cards', icon: Layers },
+  { key: 'exam2', label: 'Exam 2', path: '/cert-exam-2', icon: GraduationCap },
+  { key: 'cards2', label: 'Exam 2 Cards', path: '/cert-cards-2', icon: Layers },
   { key: 'study', label: 'Study Notes', path: '/cert-study', icon: NotebookPen },
   { key: 'slides', label: 'Study Slides', path: '/cert-slides', icon: Presentation },
 ]
@@ -17,6 +20,8 @@ const tabs: readonly { readonly key: CertTab; readonly label: string; readonly p
 function tabFromPath(pathname: string): CertTab {
   if (pathname.startsWith('/cert-study')) return 'study'
   if (pathname.startsWith('/cert-slides')) return 'slides'
+  if (pathname.startsWith('/cert-cards-2')) return 'cards2'
+  if (pathname.startsWith('/cert-exam-2')) return 'exam2'
   if (pathname.startsWith('/cert-cards')) return 'cards'
   return 'exam'
 }
@@ -49,6 +54,8 @@ export default function Cert() {
 
       {active === 'exam' && <CertExam />}
       {active === 'cards' && <CertCards />}
+      {active === 'exam2' && <CertExam questions={certQuestions2} />}
+      {active === 'cards2' && <CertCards questions={certQuestions2} />}
       {active === 'study' && <CertStudy />}
       {active === 'slides' && <CertSlides />}
     </div>

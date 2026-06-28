@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react'
 import { certQuestions, certDomains } from '../data/certQuestions'
+import type { CertQuestion } from '../data/certQuestions'
 import { shuffleAllOptions } from '../data/shuffleOptions'
 
 const domainLabel = new Map(certDomains.map((d) => [d.key, d.label]))
@@ -14,14 +15,14 @@ const filters: readonly { readonly label: string; readonly value: DomainFilter }
 
 const AUTO_ADVANCE_MS = 5000
 
-export default function CertCards() {
+export default function CertCards({ questions = certQuestions }: { readonly questions?: readonly CertQuestion[] }) {
   const [filter, setFilter] = useState<DomainFilter>('all')
   const [index, setIndex] = useState(0)
   const [answers, setAnswers] = useState<ReadonlyMap<number, number>>(() => new Map())
   const [autoAdvance, setAutoAdvance] = useState(true)
 
   // Shuffle option order once per page load.
-  const pool = useMemo(() => shuffleAllOptions(certQuestions), [])
+  const pool = useMemo(() => shuffleAllOptions(questions), [questions])
   const cards = useMemo(
     () => (filter === 'all' ? pool : pool.filter((c) => c.domain === filter)),
     [filter, pool]

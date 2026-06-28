@@ -24,6 +24,8 @@ export default function App() {
           <Route path="/cert" element={<Cert />} />
           <Route path="/cert-exam" element={<Cert />} />
           <Route path="/cert-cards" element={<Cert />} />
+          <Route path="/cert-exam-2" element={<Cert />} />
+          <Route path="/cert-cards-2" element={<Cert />} />
           <Route path="/cert-study" element={<Cert />} />
           <Route path="/cert-slides" element={<Cert />} />
           <Route path="/labs" element={<Labs />} />
