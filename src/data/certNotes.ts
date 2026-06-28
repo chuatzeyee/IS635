@@ -241,13 +241,67 @@ export const certNotes: readonly CertNote[] = [
             ['OnInitialize', 'Once, before the first render', 'Initialize local variables'],
             ['OnRender', 'On initial render AND every re-render', 'React to variable changes each paint'],
             ['OnAfterFetch', 'After a screen Aggregate/Data Action returns', 'Post-process fetched data'],
-            ['OnParametersChanged', 'When an input parameter value changes', 'Refresh a Block when its inputs change'],
+            ['OnParametersChanged', 'When an input parameter value changes (Blocks only)', 'Refresh a Block when its inputs change'],
           ],
         },
       },
       {
         kind: 'tip',
         text: 'OnInitialize = once (init vars). OnRender = every UI update. Don\'t put one-time setup in OnRender — it fires repeatedly.',
+      },
+      {
+        kind: 'warn',
+        text: '**OnParametersChanged is a Block event**, not a Screen event — it fires when the parent passes new Input Parameter values. See the Blocks card.',
+      },
+    ],
+  },
+  {
+    id: 'blocks',
+    title: 'Blocks (Reusable UI Components)',
+    summary: 'A reusable piece of UI + logic you build once and drop into many Screens or other Blocks.',
+    blocks: [
+      {
+        kind: 'text',
+        text: 'A **Block** is OutSystems\' reusable UI component — a self-contained bundle of widgets, styling, local variables, and client logic that you build once and **embed in many Screens** (or inside other Blocks). Think of it like a custom widget: a navigation bar, a reusable card, a search box, a rating stars control. It keeps UI DRY — change the Block once and every Screen using it updates.',
+      },
+      {
+        kind: 'text',
+        text: 'A Block lives in the **Interface** layer alongside Screens. The big difference: a **Screen** has its own URL and you navigate to it; a **Block** has no URL — it only exists embedded inside a Screen or another Block.',
+      },
+      {
+        kind: 'table',
+        table: {
+          headers: ['', 'Screen', 'Block'],
+          rows: [
+            ['Has a URL / navigable?', 'Yes (you navigate to it)', 'No (embedded only)'],
+            ['Reusable in many places?', 'No — one destination', 'Yes — drop into many Screens/Blocks'],
+            ['Input parameters', 'Yes (from URL / navigation)', 'Yes (passed by the parent)'],
+            ['Can raise Events to parent?', 'N/A', 'Yes — its main way to talk back'],
+            ['Lifecycle events', 'OnInitialize, OnRender, OnAfterFetch', 'OnInitialize, OnRender, OnParametersChanged'],
+          ],
+        },
+      },
+      {
+        kind: 'text',
+        text: 'How a Block communicates — **data flows down via Input Parameters, events flow up via Events**:',
+      },
+      {
+        kind: 'bullets',
+        items: [
+          '**Input Parameters** — the parent Screen/Block passes data IN (e.g. a `CustomerId` or a record to display). One-way: parent → block.',
+          '**Events** — the Block talks BACK to its parent. The Block defines a named Event (e.g. `OnItemClick`); the parent provides a **handler** (a Client Action) that runs when the Block triggers it. This is how a reusable Block stays decoupled — it announces "something happened" and lets each parent decide what to do.',
+          '**OnParametersChanged** — a Block-specific lifecycle event that fires whenever one of its **Input Parameters changes value**. Use it to re-fetch or recompute when the parent passes new inputs (a Screen does NOT have this event).',
+          '**Placeholders** — named slots inside a Block where the parent can inject its own content (like a slot/children). Lets a Block define layout while the parent fills specific regions.',
+          '**Public Block** — set Public = Yes to reuse a Block across modules (referenced via Manage Dependencies), same as other public elements.',
+        ],
+      },
+      {
+        kind: 'tip',
+        text: 'Memory aid: Input Parameters go DOWN (parent → block), Events go UP (block → parent). A Block reacts to new inputs with OnParametersChanged. If you need a URL, it\'s a Screen, not a Block.',
+      },
+      {
+        kind: 'warn',
+        text: 'Common traps: a Block has **no URL** and can\'t be navigated to — only embedded. **OnParametersChanged** belongs to Blocks (fires when inputs change), not Screens. To send data from a Block back to its parent, you raise an **Event** — you do NOT write to the parent\'s variables directly.',
       },
     ],
   },
