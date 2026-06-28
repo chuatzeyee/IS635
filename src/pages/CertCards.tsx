@@ -60,6 +60,10 @@ export default function CertCards() {
       if (e.key === 'ArrowRight' || e.key === 'Enter') go(1)
       else if (e.key === 'ArrowLeft') go(-1)
       else if (e.key >= '1' && e.key <= '4') pick(Number(e.key) - 1)
+      else if (e.key === ' ') {
+        e.preventDefault()
+        setAutoAdvance((p) => !p)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -96,7 +100,8 @@ export default function CertCards() {
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">4</kbd> answer ·{' '}
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">←</kbd>
           <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">→</kbd> navigate ·{' '}
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Enter</kbd> next
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Enter</kbd> next ·{' '}
+          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Space</kbd> pause
         </p>
         <div className="flex items-center gap-3">
           <button
