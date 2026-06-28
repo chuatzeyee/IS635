@@ -11,7 +11,7 @@ const filters: readonly { readonly label: string; readonly value: DomainFilter }
   ...certDomains.map((d) => ({ label: d.label, value: d.key })),
 ]
 
-const AUTO_ADVANCE_MS = 8000
+const AUTO_ADVANCE_MS = 5000
 
 export default function CertCards() {
   const [filter, setFilter] = useState<DomainFilter>('all')
@@ -108,10 +108,10 @@ export default function CertCards() {
                 ? 'bg-glow-dim text-glow border-glow/30'
                 : 'bg-surface text-ink-secondary border-edge hover:bg-raised hover:text-ink'
             }`}
-            title="Auto-advance every 8 seconds"
+            title="Auto-advance every 5 seconds"
           >
             {autoAdvance ? <Pause size={12} /> : <Play size={12} />}
-            Auto 8s
+            Auto 5s
           </button>
           <span className="text-xs text-ink-faint font-mono">
             {total === 0 ? '0 / 0' : `${safeIndex + 1} / ${total}`}
