@@ -1,17 +1,23 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { GraduationCap, NotebookPen } from 'lucide-react'
+import { GraduationCap, NotebookPen, Presentation, Layers } from 'lucide-react'
 import CertExam from './CertExam'
 import CertStudy from './CertStudy'
+import CertSlides from './CertSlides'
+import CertCards from './CertCards'
 
-type CertTab = 'exam' | 'study'
+type CertTab = 'exam' | 'study' | 'slides' | 'cards'
 
 const tabs: readonly { readonly key: CertTab; readonly label: string; readonly path: string; readonly icon: typeof GraduationCap }[] = [
   { key: 'exam', label: 'Practice Exam', path: '/cert-exam', icon: GraduationCap },
+  { key: 'cards', label: 'Exam Cards', path: '/cert-cards', icon: Layers },
   { key: 'study', label: 'Study Notes', path: '/cert-study', icon: NotebookPen },
+  { key: 'slides', label: 'Study Slides', path: '/cert-slides', icon: Presentation },
 ]
 
 function tabFromPath(pathname: string): CertTab {
   if (pathname.startsWith('/cert-study')) return 'study'
+  if (pathname.startsWith('/cert-slides')) return 'slides'
+  if (pathname.startsWith('/cert-cards')) return 'cards'
   return 'exam'
 }
 
@@ -42,7 +48,9 @@ export default function Cert() {
       </div>
 
       {active === 'exam' && <CertExam />}
+      {active === 'cards' && <CertCards />}
       {active === 'study' && <CertStudy />}
+      {active === 'slides' && <CertSlides />}
     </div>
   )
 }
