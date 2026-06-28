@@ -1,20 +1,35 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { ChevronLeft, ChevronRight, Play, Pause, ChevronDown, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Play, Pause, ChevronDown, Check, Trophy, RotateCcw, Flag } from 'lucide-react'
 import { certQuestions, certDomains } from '../data/certQuestions'
 import type { CertQuestion } from '../data/certQuestions'
 import { shuffleAllOptions } from '../data/shuffleOptions'
 import { useFocusMode } from '../components/FocusMode'
+import { loadAttempts, saveAttempt, clearAttempts } from '../data/examScores'
+import type { ExamAttempt } from '../data/examScores'
 
 const domainLabel = new Map(certDomains.map((d) => [d.key, d.label]))
 
 const AUTO_ADVANCE_MS = 5000
 
-export default function CertCards({ questions = certQuestions }: { readonly questions?: readonly CertQuestion[] }) {
+function formatWhen(ms: number): string {
+  const d = new Date(ms)
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+export default function CertCards({
+  questions = certQuestions,
+  examId = 'cert-1',
+}: {
+  readonly questions?: readonly CertQuestion[]
+  readonly examId?: string
+}) {
   const [selectedDomains, setSelectedDomains] = useState<ReadonlySet<string>>(() => new Set())
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [index, setIndex] = useState(0)
   const [answers, setAnswers] = useState<ReadonlyMap<number, number>>(() => new Map())
   const [autoAdvance, setAutoAdvance] = useState(true)
+  const [showSummary, setShowSummary] = useState(false)
+  const [attempts, setAttempts] = useState<readonly ExamAttempt[]>(() => loadAttempts(examId))
   const dropdownRef = useRef<HTMLDivElement>(null)
   const { chromeVisible, activate } = useFocusMode()
 
@@ -33,6 +48,39 @@ export default function CertCards({ questions = certQuestions }: { readonly ques
 
   const selected = q ? answers.get(q.id) ?? null : null
   const revealed = selected !== null
+
+  // Live score over the current (filtered) card set.
+  const score = useMemo(() => {
+    let correct = 0
+    let answered = 0
+    for (const c of cards) {
+      const a = answers.get(c.id)
+      if (a !== undefined) {
+        answered++
+        if (a === c.correctIndex) correct++
+      }
+    }
+    return { correct, answered }
+  }, [cards, answers])
+
+  const wrongCards = useMemo(
+    () => cards.filter((c) => { const a = answers.get(c.id); return a !== undefined && a !== c.correctIndex }),
+    [cards, answers]
+  )
+
+  const finish = useCallback(() => {
+    if (score.answered > 0) {
+      const attempt: ExamAttempt = { correct: score.correct, answered: score.answered, total, at: Date.now() }
+      setAttempts(saveAttempt(examId, attempt))
+    }
+    setShowSummary(true)
+  }, [score, total, examId])
+
+  const restart = useCallback(() => {
+    setAnswers(new Map())
+    setIndex(0)
+    setShowSummary(false)
+  }, [])
 
   const go = useCallback(
     (delta: number) => {
@@ -112,6 +160,126 @@ export default function CertCards({ questions = certQuestions }: { readonly ques
   const chromeCls = `transition-opacity duration-500 ${chromeVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`
   const countingDown = autoAdvance && revealed && total > 0 && safeIndex < total - 1
 
+  if (showSummary) {
+    const pct = score.answered > 0 ? Math.round((score.correct / score.answered) * 100) : 0
+    return (
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="bg-surface border border-edge rounded-xl p-8 animate-fade-in">
+          <div className="flex items-center gap-3 mb-2">
+            <Trophy size={22} className="text-glow" />
+            <h1 className="text-2xl font-bold text-ink tracking-tight">Results</h1>
+          </div>
+          <p className="text-ink-muted mb-6">
+            {filterLabel} · {examId === 'cert-2' ? 'Exam 2' : 'Exam 1'}
+          </p>
+
+          <div className="grid grid-cols-3 gap-3 mb-8">
+            <div className="bg-raised border border-edge rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold text-glow">{pct}%</div>
+              <div className="text-xs text-ink-muted mt-1 font-mono">accuracy</div>
+            </div>
+            <div className="bg-raised border border-edge rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold text-correct">{score.correct}</div>
+              <div className="text-xs text-ink-muted mt-1 font-mono">correct</div>
+            </div>
+            <div className="bg-raised border border-edge rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold text-wrong">{score.answered - score.correct}</div>
+              <div className="text-xs text-ink-muted mt-1 font-mono">wrong</div>
+            </div>
+          </div>
+          <p className="text-xs text-ink-faint font-mono mb-8">
+            Answered {score.answered} of {total} · {total - score.answered} skipped
+          </p>
+
+          <div className="flex items-center gap-2 mb-8">
+            <button
+              onClick={restart}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-glow-dim text-glow border border-glow/30 hover:bg-glow-dim/70 transition-all duration-150 cursor-pointer"
+            >
+              <RotateCcw size={15} />
+              Retake
+            </button>
+            <button
+              onClick={() => setShowSummary(false)}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-surface text-ink-secondary border border-edge hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer"
+            >
+              Back to cards
+            </button>
+          </div>
+
+          {/* Wrong questions for quick review */}
+          {wrongCards.length > 0 ? (
+            <div className="mb-8">
+              <h2 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                Review — {wrongCards.length} wrong
+              </h2>
+              <div className="space-y-3">
+                {wrongCards.map((c) => {
+                  const yourPick = answers.get(c.id)
+                  return (
+                    <div key={c.id} className="bg-raised border border-wrong/30 rounded-lg p-4">
+                      <div className="mb-2">
+                        <span className="inline-block px-2 py-0.5 text-[11px] font-mono rounded bg-glow-dim/40 text-glow border border-glow/15">
+                          {domainLabel.get(c.domain) ?? c.domain}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-ink mb-2">{c.question}</p>
+                      <p className="text-xs text-wrong mb-1">
+                        Your answer: {yourPick !== undefined ? `${yourPick + 1}. ${c.options[yourPick]}` : '—'}
+                      </p>
+                      <p className="text-xs text-correct mb-2">
+                        Correct: {c.correctIndex + 1}. {c.options[c.correctIndex]}
+                      </p>
+                      {c.explanation && (
+                        <p className="text-xs text-ink-secondary bg-base/60 border border-edge rounded px-2.5 py-1.5">
+                          <span className="font-semibold text-ink">Why: </span>
+                          {c.explanation}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            score.answered > 0 && (
+              <p className="text-sm text-correct mb-8">Perfect — no wrong answers in this set!</p>
+            )
+          )}
+
+          {/* Past attempts */}
+          {attempts.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-ink">Past attempts</h2>
+                <button
+                  onClick={() => { clearAttempts(examId); setAttempts([]) }}
+                  className="text-xs text-ink-faint hover:text-wrong transition-colors cursor-pointer"
+                >
+                  Clear history
+                </button>
+              </div>
+              <div className="space-y-1.5">
+                {attempts.map((a, i) => {
+                  const apct = a.answered > 0 ? Math.round((a.correct / a.answered) * 100) : 0
+                  return (
+                    <div key={i} className="flex items-center justify-between text-xs font-mono bg-raised border border-edge rounded-lg px-3 py-2">
+                      <span className="text-ink-muted">{formatWhen(a.at)}</span>
+                      <span className="text-ink-secondary">
+                        <span className="text-correct">{a.correct}</span>/{a.answered}
+                        <span className="text-glow ml-2">{apct}%</span>
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className={`flex items-center justify-between gap-3 mb-4 flex-wrap ${chromeCls}`}>
@@ -168,9 +336,26 @@ export default function CertCards({ questions = certQuestions }: { readonly ques
             {autoAdvance ? <Pause size={12} /> : <Play size={12} />}
             Auto 5s
           </button>
+          <span className="text-xs font-mono text-ink-secondary">
+            <span className="text-correct">{score.correct}</span>
+            <span className="text-ink-faint">/</span>
+            <span className="text-ink-secondary">{score.answered}</span>
+            {score.answered > 0 && (
+              <span className="text-glow ml-1">({Math.round((score.correct / score.answered) * 100)}%)</span>
+            )}
+          </span>
           <span className="text-xs text-ink-faint font-mono">
             {total === 0 ? '0 / 0' : `${safeIndex + 1} / ${total}`}
           </span>
+          <button
+            onClick={finish}
+            disabled={score.answered === 0}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border border-edge bg-surface text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-default"
+            title="Finish and review score"
+          >
+            <Flag size={12} />
+            Finish
+          </button>
         </div>
       </div>
 

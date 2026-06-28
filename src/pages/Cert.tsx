@@ -63,9 +63,9 @@ export default function Cert() {
       </div>
 
       {active === 'exam' && <CertExam />}
-      {active === 'cards' && <CertCards />}
+      {active === 'cards' && <CertCards examId="cert-1" />}
       {active === 'exam2' && <CertExam questions={certQuestions2} />}
-      {active === 'cards2' && <CertCards questions={certQuestions2} />}
+      {active === 'cards2' && <CertCards questions={certQuestions2} examId="cert-2" />}
       {active === 'study' && <CertStudy />}
       {active === 'slides' && <CertSlides />}
     </div>
