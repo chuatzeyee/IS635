@@ -524,6 +524,45 @@ export const certNotes: readonly CertNote[] = [
     ],
   },
   {
+    id: 'debugger-stepping',
+    title: 'Debugger: Step Into / Step Over / Continue',
+    summary: 'How to walk through paused logic — and the Step Into vs Step Over distinction.',
+    blocks: [
+      {
+        kind: 'text',
+        text: 'You set a **breakpoint** on a node; when execution reaches it the debugger **pauses** and you can inspect variables. From there, the stepping controls decide how execution proceeds:',
+      },
+      {
+        kind: 'table',
+        table: {
+          headers: ['Control', 'What it does', 'When to use'],
+          rows: [
+            ['Step Into', 'Executes the next node; if it is a call to an action, ENTERS that action and pauses on its first node', 'Follow execution down INTO a called Server/Client Action'],
+            ['Step Over', 'Executes the next node fully; if it calls an action, runs the whole action WITHOUT descending, then pauses on the next node in the current flow', 'Skip the internals of a call you trust'],
+            ['Continue', 'Resumes normal execution until the next breakpoint (or the flow ends)', 'Run on to the next breakpoint'],
+          ],
+        },
+      },
+      {
+        kind: 'bullets',
+        items: [
+          '**Step Into** is the only one that descends into a **called action** — it pauses on the first node inside it. (This is the answer to "continue step by step, including into a called action.")',
+          '**Step Over** runs the called action to completion but stays at the current level — you do not see its inner nodes.',
+          '**Continue** ignores remaining nodes until it hits another breakpoint.',
+          'While paused you can inspect/expand variable values; breakpoints + the debugger live in **Service Studio**.',
+        ],
+      },
+      {
+        kind: 'tip',
+        text: 'Memory aid: Step INTO = go INSIDE the called action. Step OVER = jump OVER it (run it, don\'t enter). Continue = run to the next breakpoint.',
+      },
+      {
+        kind: 'warn',
+        text: 'Exam trap: to step into a called action node-by-node you need **Step Into** — Step Over would execute that action in one go without entering it.',
+      },
+    ],
+  },
+  {
     id: 'variables-scope',
     title: 'Variables & Scope',
     summary: 'Local, Input, and Session/Client variables — lifetime and reach.',

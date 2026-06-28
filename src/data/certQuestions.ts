@@ -2293,4 +2293,45 @@ export const certQuestions: readonly CertQuestion[] = [
     correctIndex: 1,
     explanation: "A Link is intended for navigation to a Screen (or a lightweight action). A Button — especially Submit — is the primary trigger for actions like saving a Form.",
   },
+
+  // ── Debugger Stepping ──
+  {
+    id: 174,
+    domain: "exception-debug",
+    question: "When the debugger is paused at a breakpoint, which control continues execution step by step AND enters a called action?",
+    options: [
+      "Step Over",
+      "Step Into",
+      "Continue",
+      "Restart",
+    ],
+    correctIndex: 1,
+    explanation: "Step Into executes the next node and, if it is a call to an action, descends into that action and pauses on its first node. Step Over would run the action without entering it.",
+  },
+  {
+    id: 175,
+    domain: "exception-debug",
+    question: "At a breakpoint, a developer uses Step Over on a node that calls a Server Action. What happens?",
+    options: [
+      "The debugger enters the Server Action and pauses on its first node",
+      "The Server Action runs fully without descending, then the debugger pauses on the next node in the current flow",
+      "Execution resumes until the next breakpoint anywhere",
+      "The Server Action is skipped and not executed at all",
+    ],
+    correctIndex: 1,
+    explanation: "Step Over executes the called action to completion but stays at the current level, pausing on the next node. It still runs the action — it just doesn't step through its internals.",
+  },
+  {
+    id: 176,
+    domain: "exception-debug",
+    question: "Which debugger control resumes normal execution until the next breakpoint is hit?",
+    options: [
+      "Step Into",
+      "Step Over",
+      "Continue",
+      "Inspect",
+    ],
+    correctIndex: 2,
+    explanation: "Continue resumes execution and runs until the next breakpoint (or the flow ends). Step Into/Over advance only one node at a time.",
+  },
 ]
