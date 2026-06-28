@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { ChevronLeft, ChevronRight, Play, Pause, ChevronDown, Check, Trophy, RotateCcw, Flag } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Play, Pause, ChevronDown, Check, Trophy, RotateCcw, Flag, History } from 'lucide-react'
 import { certQuestions, certDomains } from '../data/certQuestions'
 import type { CertQuestion } from '../data/certQuestions'
 import { shuffleAllOptions } from '../data/shuffleOptions'
@@ -162,34 +162,39 @@ export default function CertCards({
 
   if (showSummary) {
     const pct = score.answered > 0 ? Math.round((score.correct / score.answered) * 100) : 0
+    const hasAttempt = score.answered > 0
     return (
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="bg-surface border border-edge rounded-xl p-8 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
             <Trophy size={22} className="text-glow" />
-            <h1 className="text-2xl font-bold text-ink tracking-tight">Results</h1>
+            <h1 className="text-2xl font-bold text-ink tracking-tight">{hasAttempt ? 'Results' : 'History'}</h1>
           </div>
           <p className="text-ink-muted mb-6">
             {filterLabel} · {examId === 'cert-2' ? 'Exam 2' : 'Exam 1'}
           </p>
 
-          <div className="grid grid-cols-3 gap-3 mb-8">
-            <div className="bg-raised border border-edge rounded-lg p-4 text-center">
-              <div className="text-3xl font-bold text-glow">{pct}%</div>
-              <div className="text-xs text-ink-muted mt-1 font-mono">accuracy</div>
-            </div>
-            <div className="bg-raised border border-edge rounded-lg p-4 text-center">
-              <div className="text-3xl font-bold text-correct">{score.correct}</div>
-              <div className="text-xs text-ink-muted mt-1 font-mono">correct</div>
-            </div>
-            <div className="bg-raised border border-edge rounded-lg p-4 text-center">
-              <div className="text-3xl font-bold text-wrong">{score.answered - score.correct}</div>
-              <div className="text-xs text-ink-muted mt-1 font-mono">wrong</div>
-            </div>
-          </div>
-          <p className="text-xs text-ink-faint font-mono mb-8">
-            Answered {score.answered} of {total} · {total - score.answered} skipped
-          </p>
+          {hasAttempt && (
+            <>
+              <div className="grid grid-cols-3 gap-3 mb-8">
+                <div className="bg-raised border border-edge rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-glow">{pct}%</div>
+                  <div className="text-xs text-ink-muted mt-1 font-mono">accuracy</div>
+                </div>
+                <div className="bg-raised border border-edge rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-correct">{score.correct}</div>
+                  <div className="text-xs text-ink-muted mt-1 font-mono">correct</div>
+                </div>
+                <div className="bg-raised border border-edge rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-wrong">{score.answered - score.correct}</div>
+                  <div className="text-xs text-ink-muted mt-1 font-mono">wrong</div>
+                </div>
+              </div>
+              <p className="text-xs text-ink-faint font-mono mb-8">
+                Answered {score.answered} of {total} · {total - score.answered} skipped
+              </p>
+            </>
+          )}
 
           <div className="flex items-center gap-2 mb-8">
             <button
@@ -197,7 +202,7 @@ export default function CertCards({
               className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-glow-dim text-glow border border-glow/30 hover:bg-glow-dim/70 transition-all duration-150 cursor-pointer"
             >
               <RotateCcw size={15} />
-              Retake
+              {hasAttempt ? 'Retake' : 'Start'}
             </button>
             <button
               onClick={() => setShowSummary(false)}
@@ -248,7 +253,9 @@ export default function CertCards({
           )}
 
           {/* Past attempts */}
-          {attempts.length > 0 && (
+          {attempts.length === 0 ? (
+            <p className="text-sm text-ink-muted">No saved attempts yet. Finish a run to record your score here.</p>
+          ) : (
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-ink">Past attempts</h2>
@@ -355,6 +362,14 @@ export default function CertCards({
           >
             <Flag size={12} />
             Finish
+          </button>
+          <button
+            onClick={() => setShowSummary(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border border-edge bg-surface text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer"
+            title="View attempt history"
+          >
+            <History size={12} />
+            History
           </button>
         </div>
       </div>
