@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { ChevronLeft, ChevronRight, Play, Pause, ChevronDown, Check, Trophy, RotateCcw, Flag, History } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Play, Pause, Check, Trophy, RotateCcw, Flag, History, Menu, X, Maximize, Minimize } from 'lucide-react'
 import { certQuestions, certDomains } from '../data/certQuestions'
 import type { CertQuestion } from '../data/certQuestions'
 import { shuffleAllOptions } from '../data/shuffleOptions'
@@ -24,17 +24,34 @@ export default function CertCards({
   readonly examId?: string
 }) {
   const [selectedDomains, setSelectedDomains] = useState<ReadonlySet<string>>(() => new Set())
-  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [index, setIndex] = useState(0)
   const [answers, setAnswers] = useState<ReadonlyMap<number, number>>(() => new Map())
   const [autoAdvance, setAutoAdvance] = useState(true)
   const [showSummary, setShowSummary] = useState(false)
   const [attempts, setAttempts] = useState<readonly ExamAttempt[]>(() => loadAttempts(examId))
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const { chromeVisible, activate } = useFocusMode()
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const { activate } = useFocusMode()
 
-  // Activate auto-hide chrome while this view is mounted.
+  // Auto-hide the global nav pill while studying cards.
   useEffect(() => activate(), [activate])
+
+  const toggleFullscreen = useCallback(() => {
+    const el = rootRef.current
+    if (!el) return
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().catch(() => {})
+    } else {
+      document.exitFullscreen?.().catch(() => {})
+    }
+  }, [])
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
+  }, [])
 
   // Shuffle option order once per page load.
   const pool = useMemo(() => shuffleAllOptions(questions), [questions])
@@ -117,18 +134,6 @@ export default function CertCards({
     setIndex(0)
   }
 
-  // Close dropdown on outside click.
-  useEffect(() => {
-    if (!dropdownOpen) return
-    const onClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [dropdownOpen])
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'Enter') go(1)
@@ -137,11 +142,15 @@ export default function CertCards({
       else if (e.key === ' ') {
         e.preventDefault()
         setAutoAdvance((p) => !p)
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen()
+      } else if (e.key === 'Escape') {
+        setSidebarOpen(false)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [go, pick])
+  }, [go, pick, toggleFullscreen])
 
   // Auto-advance AFTER the card is answered; stops on the last card.
   useEffect(() => {
@@ -157,7 +166,6 @@ export default function CertCards({
         ? domainLabel.get([...selectedDomains][0]) ?? '1 category'
         : `${selectedDomains.size} categories`
 
-  const chromeCls = `transition-opacity duration-500 ${chromeVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`
   const countingDown = autoAdvance && revealed && total > 0 && safeIndex < total - 1
 
   if (showSummary) {
@@ -288,19 +296,109 @@ export default function CertCards({
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className={`flex items-center justify-between gap-3 mb-4 flex-wrap ${chromeCls}`}>
-        {/* Multi-select category dropdown */}
-        <div className="relative" ref={dropdownRef}>
+    <div
+      ref={rootRef}
+      className="relative bg-void"
+      style={{ minHeight: isFullscreen ? '100vh' : 'calc(100vh - 7rem)' }}
+    >
+      {/* Sidebar toggle (top-left) */}
+      <button
+        onClick={() => setSidebarOpen((o) => !o)}
+        className="absolute top-4 left-4 z-30 flex items-center justify-center w-10 h-10 rounded-lg bg-surface/90 backdrop-blur border border-edge text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer"
+        title="Controls (menu)"
+        aria-label="Toggle controls"
+      >
+        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+      </button>
+
+      {/* Fullscreen toggle (top-right) */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-4 right-4 z-30 flex items-center justify-center w-10 h-10 rounded-lg bg-surface/90 backdrop-blur border border-edge text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer"
+        title="Fullscreen (F)"
+        aria-label="Toggle fullscreen"
+      >
+        {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+      </button>
+
+      {/* Position indicator (top-center, always-on, minimal) */}
+      <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 text-xs font-mono text-ink-faint pointer-events-none">
+        {total === 0 ? '0 / 0' : `${safeIndex + 1} / ${total}`}
+      </div>
+
+      {/* Backdrop when sidebar open */}
+      {sidebarOpen && (
+        <div
+          className="absolute inset-0 z-30 bg-black/40 animate-fade-in"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Slide-in control sidebar */}
+      <aside
+        className={`absolute top-0 left-0 z-40 h-full w-72 max-w-[85vw] bg-base border-r border-edge-bright shadow-[8px_0_24px_rgba(0,0,0,0.4)] flex flex-col transition-transform duration-300 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
+          <span className="text-sm font-semibold text-ink">Controls</span>
           <button
-            onClick={() => setDropdownOpen((o) => !o)}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-surface text-ink-secondary border border-edge hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer"
+            onClick={() => setSidebarOpen(false)}
+            className="text-ink-muted hover:text-ink transition-colors cursor-pointer"
+            aria-label="Close controls"
           >
-            {filterLabel}
-            <ChevronDown size={13} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+            <X size={16} />
           </button>
-          {dropdownOpen && (
-            <div className="absolute left-0 mt-1 w-56 z-20 bg-base border border-edge-bright rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)] p-1 animate-scale-in">
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          {/* Score */}
+          <div className="text-xs font-mono text-ink-secondary">
+            Score: <span className="text-correct">{score.correct}</span>/<span>{score.answered}</span>
+            {score.answered > 0 && (
+              <span className="text-glow ml-1">({Math.round((score.correct / score.answered) * 100)}%)</span>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-2">
+            <button
+              onClick={() => setAutoAdvance((p) => !p)}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-xs rounded-lg border transition-all duration-150 cursor-pointer ${
+                autoAdvance ? 'bg-glow-dim text-glow border-glow/30' : 'bg-surface text-ink-secondary border-edge hover:bg-raised hover:text-ink'
+              }`}
+            >
+              {autoAdvance ? <Pause size={13} /> : <Play size={13} />}
+              Auto-advance 5s {autoAdvance ? '(on)' : '(off)'}
+            </button>
+            <button
+              onClick={() => { finish(); setSidebarOpen(false) }}
+              disabled={score.answered === 0}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-lg border border-edge bg-surface text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-default"
+            >
+              <Flag size={13} />
+              Finish &amp; review
+            </button>
+            <button
+              onClick={() => { setShowSummary(true); setSidebarOpen(false) }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-lg border border-edge bg-surface text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer"
+            >
+              <History size={13} />
+              History
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-lg border border-edge bg-surface text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer"
+            >
+              {isFullscreen ? <Minimize size={13} /> : <Maximize size={13} />}
+              {isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            </button>
+          </div>
+
+          {/* Category filter */}
+          <div>
+            <div className="text-xs font-semibold text-ink mb-2">Categories</div>
+            <div className="space-y-1">
               <button
                 onClick={clearDomains}
                 className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md text-ink-secondary hover:bg-raised hover:text-ink transition-colors cursor-pointer"
@@ -310,16 +408,15 @@ export default function CertCards({
                 </span>
                 All categories
               </button>
-              <div className="h-px bg-edge my-1" />
               {certDomains.map((d) => {
                 const on = selectedDomains.has(d.key)
                 return (
                   <button
                     key={d.key}
                     onClick={() => toggleDomain(d.key)}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md text-ink-secondary hover:bg-raised hover:text-ink transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md text-ink-secondary hover:bg-raised hover:text-ink transition-colors cursor-pointer text-left"
                   >
-                    <span className={`w-3.5 h-3.5 flex items-center justify-center rounded border ${on ? 'bg-glow border-glow text-base' : 'border-edge'}`}>
+                    <span className={`w-3.5 h-3.5 flex-shrink-0 flex items-center justify-center rounded border ${on ? 'bg-glow border-glow text-base' : 'border-edge'}`}>
                       {on && <Check size={10} />}
                     </span>
                     {d.label}
@@ -327,176 +424,119 @@ export default function CertCards({
                 )
               })}
             </div>
+          </div>
+
+          {/* Legend */}
+          <div className="text-[11px] text-ink-muted font-mono leading-relaxed border-t border-edge pt-4">
+            <div className="font-semibold text-ink-secondary mb-1">Shortcuts</div>
+            <div><kbd className="px-1 bg-raised border border-edge rounded">1</kbd>–<kbd className="px-1 bg-raised border border-edge rounded">4</kbd> answer</div>
+            <div><kbd className="px-1 bg-raised border border-edge rounded">←</kbd> <kbd className="px-1 bg-raised border border-edge rounded">→</kbd> navigate · <kbd className="px-1 bg-raised border border-edge rounded">Enter</kbd> next</div>
+            <div><kbd className="px-1 bg-raised border border-edge rounded">Space</kbd> pause · <kbd className="px-1 bg-raised border border-edge rounded">F</kbd> fullscreen</div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Centered question stage */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-[5vw] py-[8vh]">
+        {/* Progress bar */}
+        <div className="w-full max-w-[min(900px,90vw)] h-1 bg-raised rounded-full overflow-hidden border border-edge mb-[3vh]">
+          {countingDown ? (
+            <div key={q ? `countdown-${q.id}` : 'countdown'} className="h-full bg-glow rounded-full animate-progress-fill" />
+          ) : (
+            <div
+              className="h-full bg-glow/70 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${total === 0 ? 0 : ((safeIndex + 1) / total) * 100}%` }}
+            />
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setAutoAdvance((p) => !p)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border transition-all duration-150 cursor-pointer ${
-              autoAdvance
-                ? 'bg-glow-dim text-glow border-glow/30'
-                : 'bg-surface text-ink-secondary border-edge hover:bg-raised hover:text-ink'
-            }`}
-            title="Auto-advance every 5 seconds after answering"
-          >
-            {autoAdvance ? <Pause size={12} /> : <Play size={12} />}
-            Auto 5s
-          </button>
-          <span className="text-xs font-mono text-ink-secondary">
-            <span className="text-correct">{score.correct}</span>
-            <span className="text-ink-faint">/</span>
-            <span className="text-ink-secondary">{score.answered}</span>
-            {score.answered > 0 && (
-              <span className="text-glow ml-1">({Math.round((score.correct / score.answered) * 100)}%)</span>
-            )}
-          </span>
-          <span className="text-xs text-ink-faint font-mono">
-            {total === 0 ? '0 / 0' : `${safeIndex + 1} / ${total}`}
-          </span>
-          <button
-            onClick={finish}
-            disabled={score.answered === 0}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border border-edge bg-surface text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-default"
-            title="Finish and review score"
-          >
-            <Flag size={12} />
-            Finish
-          </button>
-          <button
-            onClick={() => setShowSummary(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border border-edge bg-surface text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer"
-            title="View attempt history"
-          >
-            <History size={12} />
-            History
-          </button>
-        </div>
-      </div>
-
-      <div className={`mb-4 ${chromeCls}`}>
-        <p className="text-xs text-ink-muted font-mono">
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">1</kbd>–
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">4</kbd> answer ·{' '}
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">←</kbd>
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">→</kbd> navigate ·{' '}
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Enter</kbd> next ·{' '}
-          <kbd className="px-1.5 py-0.5 bg-raised border border-edge rounded text-ink-secondary">Space</kbd> pause
-        </p>
-      </div>
-
-      {/* Progress: animated countdown bar when auto-advancing, else position bar */}
-      <div className="h-1 bg-raised rounded-full overflow-hidden border border-edge mb-6">
-        {countingDown ? (
-          <div
-            key={q ? `countdown-${q.id}` : 'countdown'}
-            className="h-full bg-glow rounded-full animate-progress-fill"
-          />
+        {!q ? (
+          <div className="text-sm text-ink-muted">No questions in this category.</div>
         ) : (
           <div
-            className="h-full bg-glow/70 rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${total === 0 ? 0 : ((safeIndex + 1) / total) * 100}%` }}
-          />
-        )}
-      </div>
+            key={q.id}
+            className={`w-full max-w-[min(900px,90vw)] border rounded-xl p-[clamp(1.5rem,4vw,3rem)] animate-fade-in flex flex-col transition-colors duration-300 ${
+              !revealed
+                ? 'bg-surface border-edge'
+                : selected === q.correctIndex
+                  ? 'bg-correct-dim border-correct/40'
+                  : 'bg-wrong-dim border-wrong/40'
+            }`}
+          >
+            <div className="mb-[2vh]">
+              <span className="inline-block px-2.5 py-1 text-[clamp(0.7rem,1.4vw,0.85rem)] font-mono rounded-md bg-glow-dim/50 text-glow border border-glow/15">
+                {domainLabel.get(q.domain) ?? q.domain}
+              </span>
+            </div>
 
-      {!q ? (
-        <div className="bg-surface border border-edge rounded-xl p-8 min-h-[40vh] flex items-center justify-center">
-          <p className="text-sm text-ink-muted">No questions in this category.</p>
-        </div>
-      ) : (
-      <div
-        key={q.id}
-        className={`border rounded-xl p-8 min-h-[60vh] animate-fade-in flex flex-col transition-colors duration-300 ${
-          !revealed
-            ? 'bg-surface border-edge'
-            : selected === q.correctIndex
-              ? 'bg-correct-dim border-correct/40'
-              : 'bg-wrong-dim border-wrong/40'
-        }`}
-      >
-        <div className="mb-4">
-          <span className="inline-block px-2.5 py-1 text-xs font-mono rounded-md bg-glow-dim/50 text-glow border border-glow/15">
-            {domainLabel.get(q.domain) ?? q.domain}
-          </span>
-        </div>
+            <h1 className="font-semibold text-ink leading-snug mb-[3vh] text-[clamp(1.15rem,2.4vw,1.9rem)]">
+              {q.question}
+            </h1>
 
-        <h1 className="text-xl font-semibold text-ink leading-snug mb-6">{q.question}</h1>
+            <div className="grid grid-cols-1 gap-[1.5vh]">
+              {q.options.map((option, oi) => {
+                let style = 'border-edge text-ink-secondary hover:border-glow/30 hover:bg-raised'
+                if (revealed) {
+                  if (oi === q.correctIndex) style = 'border-correct/50 bg-correct-dim text-correct'
+                  else if (oi === selected) style = 'border-wrong/50 bg-wrong-dim text-wrong'
+                  else style = 'border-edge/50 text-ink-faint'
+                } else if (selected === oi) {
+                  style = 'border-glow/50 bg-glow-dim text-glow'
+                }
+                return (
+                  <button
+                    key={oi}
+                    onClick={() => pick(oi)}
+                    disabled={revealed}
+                    className={`flex items-start gap-3 px-[clamp(0.75rem,1.5vw,1.25rem)] py-[clamp(0.6rem,1.4vw,1rem)] rounded-lg text-left text-[clamp(0.9rem,1.7vw,1.15rem)] border transition-all duration-150 cursor-pointer disabled:cursor-default ${style}`}
+                  >
+                    <span className="flex-shrink-0 w-7 h-7 rounded-md bg-base/60 border border-edge text-xs font-mono font-bold flex items-center justify-center">
+                      {oi + 1}
+                    </span>
+                    <span className="pt-0.5">{option}</span>
+                  </button>
+                )
+              })}
+            </div>
 
-        <div className="grid grid-cols-1 gap-2.5 flex-1 content-start">
-          {q.options.map((option, oi) => {
-            let style = 'border-edge text-ink-secondary hover:border-glow/30 hover:bg-raised'
-            if (revealed) {
-              if (oi === q.correctIndex) {
-                style = 'border-correct/50 bg-correct-dim text-correct'
-              } else if (oi === selected) {
-                style = 'border-wrong/50 bg-wrong-dim text-wrong'
-              } else {
-                style = 'border-edge/50 text-ink-faint'
-              }
-            } else if (selected === oi) {
-              style = 'border-glow/50 bg-glow-dim text-glow'
-            }
-
-            return (
-              <button
-                key={oi}
-                onClick={() => pick(oi)}
-                disabled={revealed}
-                className={`flex items-start gap-3 px-4 py-3 rounded-lg text-left text-sm border transition-all duration-150 cursor-pointer disabled:cursor-default ${style}`}
-              >
-                <span className="flex-shrink-0 w-6 h-6 rounded-md bg-base/60 border border-edge text-xs font-mono font-bold flex items-center justify-center">
-                  {oi + 1}
-                </span>
-                <span className="pt-0.5">{option}</span>
-              </button>
-            )
-          })}
-        </div>
-
-        {revealed && (
-          <div className="mt-5 animate-scale-in">
-            {selected === q.correctIndex ? (
-              <p className="text-sm text-correct font-medium mb-2">Correct!</p>
-            ) : (
-              <p className="text-sm text-wrong font-medium mb-2">
-                Incorrect — correct answer is {q.correctIndex + 1}. {q.options[q.correctIndex]}
-              </p>
-            )}
-            {q.explanation && (
-              <p className="text-sm text-ink-secondary bg-raised border border-edge rounded-lg px-3 py-2">
-                <span className="font-semibold text-ink">Why: </span>
-                {q.explanation}
-              </p>
+            {revealed && (
+              <div className="mt-[3vh] animate-scale-in">
+                {selected === q.correctIndex ? (
+                  <p className="text-[clamp(0.9rem,1.6vw,1.1rem)] text-correct font-medium mb-2">Correct!</p>
+                ) : (
+                  <p className="text-[clamp(0.9rem,1.6vw,1.1rem)] text-wrong font-medium mb-2">
+                    Incorrect — correct answer is {q.correctIndex + 1}. {q.options[q.correctIndex]}
+                  </p>
+                )}
+                {q.explanation && (
+                  <p className="text-[clamp(0.85rem,1.5vw,1.05rem)] text-ink-secondary bg-base/40 border border-edge rounded-lg px-3 py-2">
+                    <span className="font-semibold text-ink">Why: </span>
+                    {q.explanation}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}
       </div>
-      )}
 
-      <div className={`flex items-center justify-between mt-6 ${chromeCls}`}>
-        <button
-          onClick={() => go(-1)}
-          disabled={safeIndex === 0}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm text-ink-secondary bg-surface border border-edge rounded-lg hover:bg-raised hover:text-ink hover:border-edge-bright transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-default"
-        >
-          <ChevronLeft size={16} />
-          Prev
-        </button>
-
-        <span className="text-xs text-ink-faint font-mono">
-          {revealed ? 'answered' : 'pick 1–4'}
-        </span>
-
-        <button
-          onClick={() => go(1)}
-          disabled={total === 0 || safeIndex === total - 1}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm text-ink-secondary bg-surface border border-edge rounded-lg hover:bg-raised hover:text-ink hover:border-edge-bright transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-default"
-        >
-          Next
-          <ChevronRight size={16} />
-        </button>
-      </div>
+      {/* Edge nav arrows (always available, unobtrusive) */}
+      <button
+        onClick={() => go(-1)}
+        disabled={safeIndex === 0}
+        className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-surface/70 backdrop-blur border border-edge text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer disabled:opacity-0 disabled:cursor-default"
+        aria-label="Previous"
+      >
+        <ChevronLeft size={20} />
+      </button>
+      <button
+        onClick={() => go(1)}
+        disabled={total === 0 || safeIndex === total - 1}
+        className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-surface/70 backdrop-blur border border-edge text-ink-secondary hover:bg-raised hover:text-ink transition-all duration-150 cursor-pointer disabled:opacity-0 disabled:cursor-default"
+        aria-label="Next"
+      >
+        <ChevronRight size={20} />
+      </button>
     </div>
   )
 }
